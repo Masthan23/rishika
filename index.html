@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#020817">
+    <title>AttendPro</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --c1: #6366f1;
+            --c2: #8b5cf6;
+            --c3: #a855f7;
+            --c4: #ec4899;
+            --c5: #06b6d4;
+            --bg: #020817;
+            --glow: rgba(99,102,241,0.6);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            color: #fff;
+        }
+
+        #bgCanvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .grid-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            background-image:
+                linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+            background-size: 55px 55px;
+            pointer-events: none;
+        }
+
+        /* AMBIENT ORBS */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            filter: blur(100px);
+        }
+        .orb-1 {
+            width: 700px; height: 700px;
+            top: -250px; left: -250px;
+            background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%);
+            animation: orbFloat1 18s ease-in-out infinite;
+        }
+        .orb-2 {
+            width: 600px; height: 600px;
+            bottom: -200px; right: -200px;
+            background: radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%);
+            animation: orbFloat2 22s ease-in-out infinite;
+        }
+        .orb-3 {
+            width: 400px; height: 400px;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%);
+            animation: orbFloat3 14s ease-in-out infinite;
+        }
+
+        @keyframes orbFloat1 {
+            0%,100% { transform: translate(0,0); }
+            50% { transform: translate(50px,-40px); }
+        }
+        @keyframes orbFloat2 {
+            0%,100% { transform: translate(0,0); }
+            50% { transform: translate(-40px,-30px); }
+        }
+        @keyframes orbFloat3 {
+            0%,100% { transform: translate(-50%,-50%) scale(1); }
+            50% { transform: translate(-50%,-50%) scale(1.3); }
+        }
+
+        /* ── CORNER BRACKETS ── */
+        .corner {
+            position: fixed;
+            width: 45px; height: 45px;
+            z-index: 6;
+            pointer-events: none;
+            opacity: 0;
+            animation: cornerFade 1s ease 0.5s forwards;
+        }
+        @keyframes cornerFade { to { opacity: 1; } }
+        .corner::before, .corner::after {
+            content: '';
+            position: absolute;
+            background: rgba(99,102,241,0.6);
+        }
+        .corner::before { width: 2px; height: 100%; }
+        .corner::after  { width: 100%; height: 2px; }
+        .corner.tl { top: 20px; left: 20px; }
+        .corner.tr { top: 20px; right: 20px; transform: scaleX(-1); }
+        .corner.bl { bottom: 20px; left: 20px; transform: scaleY(-1); }
+        .corner.br { bottom: 20px; right: 20px; transform: scale(-1); }
+
+        /* ════════════════════════════════
+           LOGO MORPH ANIMATION
+        ════════════════════════════════ */
+        .logo-stage {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        /* Outer pulse rings */
+        .pulse-rings {
+            position: absolute;
+            width: 200px; height: 200px;
+        }
+        .pulse-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 1.5px solid rgba(99,102,241,0.4);
+            animation: pulseRing 2.5s ease-out infinite;
+        }
+        .pulse-ring:nth-child(2) { animation-delay: 0.6s; border-color: rgba(168,85,247,0.35); }
+        .pulse-ring:nth-child(3) { animation-delay: 1.2s; border-color: rgba(6,182,212,0.3); }
+        @keyframes pulseRing {
+            0%   { transform: scale(0.6); opacity: 0.8; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+
+        /* Logo icon container */
+        .logo-icon-wrap {
+            position: relative;
+            z-index: 2;
+            width: 120px; height: 120px;
+            border-radius: 32px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.15));
+            border: 1.5px solid rgba(99,102,241,0.4);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow:
+                0 0 0 1px rgba(99,102,241,0.15),
+                0 20px 60px rgba(99,102,241,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            animation: logoEntrance 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;
+            overflow: hidden;
+        }
+
+        .logo-icon-wrap::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%);
+            border-radius: inherit;
+        }
+
+        /* Rotating border */
+        .logo-icon-wrap::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 34px;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0%,
+                rgba(99,102,241,0.8) 20%,
+                rgba(168,85,247,0.8) 40%,
+                rgba(236,72,153,0.6) 60%,
+                transparent 80%
+            );
+            animation: borderSpin 3s linear infinite;
+            z-index: -1;
+            filter: blur(1px);
+        }
+
+        @keyframes borderSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        @keyframes logoEntrance {
+            0%   { transform: scale(0) rotate(-180deg); opacity: 0; }
+            60%  { opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* The actual logo image */
+        .logo-img {
+            width: 80px; height: 80px;
+            border-radius: 20px;
+            object-fit: cover;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 0 20px rgba(99,102,241,0.6));
+            animation: imgFloat 3s ease-in-out infinite 1.2s;
+        }
+
+        @keyframes imgFloat {
+            0%,100% { transform: translateY(0) scale(1); }
+            50%      { transform: translateY(-5px) scale(1.03); }
+        }
+
+        /* Fallback icon */
+        .logo-fallback {
+            font-size: 3rem;
+            filter: drop-shadow(0 0 20px rgba(99,102,241,0.7));
+            animation: imgFloat 3s ease-in-out infinite 1.2s;
+            display: none;
+        }
+
+        /* Orbiting dots */
+        .orbit-wrap {
+            position: absolute;
+            width: 160px; height: 160px;
+            animation: orbitSpin 4s linear infinite;
+        }
+        .orbit-wrap-2 {
+            width: 210px; height: 210px;
+            animation: orbitSpin 7s linear infinite reverse;
+        }
+        .orbit-wrap-3 {
+            width: 265px; height: 265px;
+            animation: orbitSpin 11s linear infinite;
+        }
+        @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .o-dot {
+            position: absolute;
+            border-radius: 50%;
+            top: 0; left: 50%;
+            transform: translateX(-50%);
+        }
+        .o-dot-1 { width: 8px; height: 8px; background: var(--c1); box-shadow: 0 0 12px var(--c1), 0 0 4px #fff; margin-top: -4px; }
+        .o-dot-2 { width: 6px; height: 6px; background: var(--c3); box-shadow: 0 0 10px var(--c3); margin-top: -3px; }
+        .o-dot-3 { width: 5px; height: 5px; background: var(--c5); box-shadow: 0 0 10px var(--c5); margin-top: -2.5px; }
+
+        /* Text content */
+        .splash-text {
+            margin-top: 32px;
+            text-align: center;
+            animation: textRise 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.7s both;
+        }
+        @keyframes textRise {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .splash-title {
+            font-size: clamp(2.2rem, 8vw, 3.5rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            line-height: 1;
+            background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 30%, #a5b4fc 50%, #c084fc 70%, #f0abfc 90%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmerText 3s linear infinite;
+        }
+        @keyframes shimmerText {
+            0%   { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .splash-sub {
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        /* Status chips */
+        .splash-chips {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            animation: textRise 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.9s both;
+        }
+        .s-chip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 50px;
+            padding: 5px 12px;
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.6);
+            backdrop-filter: blur(10px);
+        }
+        .s-chip-dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+        }
+        .s-chip-dot.g { background: #10b981; box-shadow: 0 0 6px #10b981; animation: chipPulse 1.8s infinite; }
+        .s-chip-dot.b { background: var(--c5); box-shadow: 0 0 6px var(--c5); animation: chipPulse 1.8s 0.4s infinite; }
+        .s-chip-dot.p { background: var(--c3); box-shadow: 0 0 6px var(--c3); animation: chipPulse 1.8s 0.8s infinite; }
+        @keyframes chipPulse {
+            0%,100% { opacity: 1; }
+            50%      { opacity: 0.3; }
+        }
+
+        /* Progress */
+        .splash-progress {
+            width: min(300px, 80vw);
+            margin-top: 28px;
+            animation: textRise 0.8s cubic-bezier(0.34,1.56,0.64,1) 1.0s both;
+        }
+        .sp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .sp-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.3);
+            font-weight: 700;
+        }
+        .sp-pct {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--c2);
+        }
+        .sp-track {
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 20px;
+            overflow: visible;
+            position: relative;
+        }
+        .sp-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 20px;
+            background: linear-gradient(90deg, var(--c1), var(--c2), var(--c3));
+            background-size: 200% 100%;
+            animation: fillShimmer 1.5s linear infinite;
+            position: relative;
+            transition: width 0.4s ease;
+        }
+        .sp-fill::after {
+            content: '';
+            position: absolute;
+            right: -5px; top: 50%;
+            transform: translateY(-50%);
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.9), 0 0 20px rgba(99,102,241,0.8);
+        }
+        @keyframes fillShimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Steps */
+        .sp-steps {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .sp-step {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.2);
+            transition: all 0.4s ease;
+        }
+        .sp-step.active { color: rgba(255,255,255,0.9); }
+        .sp-step.done   { color: #10b981; }
+        .sp-step-dot {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255,255,255,0.15);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 6px;
+            transition: all 0.4s ease;
+            flex-shrink: 0;
+        }
+        .sp-step.active .sp-step-dot { background: linear-gradient(135deg, var(--c1), var(--c3)); border-color: transparent; box-shadow: 0 0 8px var(--glow); }
+        .sp-step.done .sp-step-dot   { background: #10b981; border-color: transparent; color: #fff; }
+
+        /* Version */
+        .version-tag {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: rgba(255,255,255,0.15);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            z-index: 20;
+            white-space: nowrap;
+            animation: fadeIn 1s ease 1.5s both;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Exit */
+        .exiting {
+            animation: exitFade 0.6s ease forwards !important;
+        }
+        @keyframes exitFade {
+            0%   { opacity: 1; transform: scale(1); filter: blur(0); }
+            100% { opacity: 0; transform: scale(1.08); filter: blur(16px); }
+        }
+
+        @media (max-width: 480px) {
+            .orbit-wrap-3 { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+<div class="grid-overlay"></div>
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- Logo Stage -->
+<div class="logo-stage" id="logoStage">
+
+    <!-- Pulse rings (behind everything) -->
+    <div style="position:absolute;display:flex;align-items:center;justify-content:center;">
+        <div class="pulse-rings">
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring"></div>
+        </div>
+    </div>
+
+    <!-- Orbiting dots -->
+    <div style="position:absolute;display:flex;align-items:center;justify-content:center;">
+        <div class="orbit-wrap" style="position:absolute;">
+            <div class="o-dot o-dot-1"></div>
+        </div>
+        <div class="orbit-wrap orbit-wrap-2" style="position:absolute;">
+            <div class="o-dot o-dot-2"></div>
+        </div>
+        <div class="orbit-wrap orbit-wrap-3" style="position:absolute;">
+            <div class="o-dot o-dot-3"></div>
+        </div>
+    </div>
+
+    <!-- Center logo -->
+    <div class="logo-icon-wrap" id="logoIconWrap">
+        <img
+            src="1.jpg"
+            alt="AttendPro"
+            class="logo-img"
+            id="splashImg"
+            onerror="handleImgError()"
+        />
+        <div class="logo-fallback" id="logoFallback">📋</div>
+    </div>
+
+    <!-- Text -->
+    <div class="splash-text">
+        <div class="splash-title">Attend<span style="background:linear-gradient(135deg,#818cf8,#a78bfa,#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Pro</span></div>
+        <div class="splash-sub">Smart Attendance Management</div>
+    </div>
+
+    <!-- Chips -->
+    <div class="splash-chips">
+        <div class="s-chip"><div class="s-chip-dot g"></div>System Online</div>
+        <div class="s-chip"><div class="s-chip-dot b"></div>Cloud Sync</div>
+        <div class="s-chip"><div class="s-chip-dot p"></div>v2.0</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="splash-progress">
+        <div class="sp-header">
+            <span class="sp-label" id="spLabel">Initializing</span>
+            <span class="sp-pct" id="spPct">0%</span>
+        </div>
+        <div class="sp-track">
+            <div class="sp-fill" id="spFill"></div>
+        </div>
+        <div class="sp-steps">
+            <div class="sp-step" id="ss0"><div class="sp-step-dot">⚙</div><span>Core</span></div>
+            <div class="sp-step" id="ss1"><div class="sp-step-dot">🗄</div><span>DB</span></div>
+            <div class="sp-step" id="ss2"><div class="sp-step-dot">🔐</div><span>Auth</span></div>
+            <div class="sp-step" id="ss3"><div class="sp-step-dot">📊</div><span>Analytics</span></div>
+            <div class="sp-step" id="ss4"><div class="sp-step-dot">✓</div><span>Ready</span></div>
+        </div>
+    </div>
+</div>
+
+<div class="version-tag">AttendPro © 2025 · v2.0.0</div>
+
+<script>
+(() => {
+    'use strict';
+
+    // Image error fallback
+    window.handleImgError = function() {
+        const img = document.getElementById('splashImg');
+        if (img) img.style.display = 'none';
+        const fb = document.getElementById('logoFallback');
+        if (fb) fb.style.display = 'flex';
+    };
+
+    // ── Canvas particles ──
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [], raf;
+    const PAL = ['#6366f1','#8b5cf6','#a855f7','#06b6d4','#ec4899','#3b82f6'];
+
+    function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+
+    class Particle {
+        constructor(fromBottom) { this.reset(fromBottom); }
+        reset(fromBottom) {
+            this.x    = Math.random() * W;
+            this.y    = fromBottom ? H + 10 : Math.random() * H;
+            this.vx   = (Math.random() - 0.5) * 0.5;
+            this.vy   = -(Math.random() * 0.6 + 0.15);
+            this.r    = Math.random() * 2 + 0.4;
+            this.col  = PAL[Math.floor(Math.random() * PAL.length)];
+            this.life = 0;
+            this.maxL = Math.random() * 300 + 180;
+            this.maxA = Math.random() * 0.5 + 0.15;
+            this.alpha = 0;
+            this.isStar = Math.random() < 0.2;
+        }
+        update() {
+            this.life++;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vx += (Math.random() - 0.5) * 0.015;
+            const p = this.life / this.maxL;
+            this.alpha = p < 0.1 ? (p/0.1)*this.maxA : p > 0.82 ? ((1-p)/0.18)*this.maxA : this.maxA;
+            if (this.life >= this.maxL) this.reset(true);
+        }
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.fillStyle = this.col;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = this.col;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function initParticles() {
+        particles = [];
+        const n = Math.min(120, Math.floor(W * H / 8000));
+        for (let i = 0; i < n; i++) particles.push(new Particle(false));
+    }
+
+    function drawConnections() {
+        const D = 110;
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const d = Math.sqrt(dx*dx + dy*dy);
+                if (d < D) {
+                    ctx.save();
+                    ctx.globalAlpha = (1 - d/D) * 0.1;
+                    ctx.strokeStyle = '#6366f1';
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        }
+    }
+
+    function drawCenterGlow() {
+        const g = ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.min(W,H)*0.5);
+        g.addColorStop(0, 'rgba(99,102,241,0.08)');
+        g.addColorStop(0.5, 'rgba(139,92,246,0.04)');
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.fillRect(0,0,W,H);
+    }
+
+    function loop() {
+        ctx.clearRect(0,0,W,H);
+        drawCenterGlow();
+        drawConnections();
+        particles.forEach(p => { p.update(); p.draw(); });
+        raf = requestAnimationFrame(loop);
+    }
+
+    resize(); initParticles(); loop();
+    window.addEventListener('resize', () => { resize(); initParticles(); });
+
+    // ── Progress animation ──
+    const STEPS = [
+        { id:'ss0', pct:20,  label:'Loading Core',    delay:300  },
+        { id:'ss1', pct:42,  label:'Connecting DB',   delay:700  },
+        { id:'ss2', pct:65,  label:'Securing Auth',   delay:1100 },
+        { id:'ss3', pct:85,  label:'Fetching Data',   delay:1550 },
+        { id:'ss4', pct:100, label:'Ready!',          delay:2050 },
+    ];
+
+    const spPct  = document.getElementById('spPct');
+    const spFill = document.getElementById('spFill');
+    const spLbl  = document.getElementById('spLabel');
+    let curPct = 0;
+
+    function animPct(to, dur) {
+        const t0 = performance.now(), from = curPct;
+        function s(now) {
+            const p = Math.min((now - t0) / dur, 1);
+            const e = 1 - Math.pow(1 - p, 3);
+            curPct = Math.round(from + (to - from) * e);
+            if (spPct)  spPct.textContent  = curPct + '%';
+            if (spFill) spFill.style.width = curPct + '%';
+            if (p < 1) requestAnimationFrame(s);
+            else curPct = to;
+        }
+        requestAnimationFrame(s);
+    }
+
+    STEPS.forEach((s, i) => {
+        setTimeout(() => {
+            if (i > 0) {
+                const prev = document.getElementById(STEPS[i-1].id);
+                if (prev) { prev.classList.remove('active'); prev.classList.add('done'); prev.querySelector('.sp-step-dot').textContent = '✓'; }
+            }
+            const cur = document.getElementById(s.id);
+            if (cur) cur.classList.add('active');
+            if (spLbl) spLbl.textContent = s.label;
+            animPct(s.pct, 380);
+        }, s.delay);
+    });
+
+    // ── Exit to app ──
+    setTimeout(() => {
+        const last = document.getElementById('ss4');
+        if (last) { last.classList.remove('active'); last.classList.add('done'); last.querySelector('.sp-step-dot').textContent = '✓'; }
+        setTimeout(() => {
+            const stage = document.getElementById('logoStage');
+            if (stage) stage.classList.add('exiting');
+            cancelAnimationFrame(raf);
+            setTimeout(() => { location.href = 'app.html'; }, 650);
+        }, 320);
+    }, 2700);
+
+})();
+</script>
+</body>
+</html>

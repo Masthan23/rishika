@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Not Found | AttendPro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            overflow: hidden
+        }
+
+        .stars {
+            position: fixed;
+            inset: 0;
+            pointer-events: none
+        }
+
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle linear infinite
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0
+            }
+
+            50% {
+                opacity: 1
+            }
+        }
+
+        .wrap {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            padding: 30px
+        }
+
+        .orbit {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 1px solid rgba(167, 139, 250, .25);
+            margin: 0 auto 30px;
+            position: relative;
+            animation: spin 10s linear infinite
+        }
+
+        .orbit-dot {
+            position: absolute;
+            top: -7px;
+            left: 50%;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a78bfa, #667eea);
+            box-shadow: 0 0 20px rgba(167, 139, 250, .8)
+        }
+
+        .orbit-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            animation: spin-r 10s linear infinite
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0)
+            }
+
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        @keyframes spin-r {
+            from {
+                transform: translate(-50%, -50%) rotate(0)
+            }
+
+            to {
+                transform: translate(-50%, -50%) rotate(-360deg)
+            }
+        }
+
+        .code {
+            font-size: clamp(5rem, 20vw, 10rem);
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(135deg, #fff, #a78bfa, #667eea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 30px rgba(102, 126, 234, .5));
+            animation: glitch 4s infinite
+        }
+
+        @keyframes glitch {
+
+            0%,
+            88%,
+            100% {
+                transform: skewX(0)
+            }
+
+            90% {
+                transform: skewX(-5deg)
+            }
+
+            94% {
+                transform: skewX(5deg)
+            }
+
+            97% {
+                transform: skewX(-2deg)
+            }
+        }
+
+        .astro {
+            font-size: 4rem;
+            display: block;
+            margin: 15px auto;
+            animation: afloat 4s ease-in-out infinite
+        }
+
+        @keyframes afloat {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(-5deg)
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(5deg)
+            }
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 10px
+        }
+
+        p {
+            color: rgba(255, 255, 255, .6);
+            max-width: 420px;
+            margin: 0 auto 35px;
+            line-height: 1.6
+        }
+
+        .btns {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap
+        }
+
+        .btn {
+            padding: 13px 28px;
+            border-radius: 50px;
+            font-size: .95rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all .3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .btn-p {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, .4)
+        }
+
+        .btn-p:hover {
+            transform: translateY(-3px)
+        }
+
+        .btn-s {
+            background: rgba(255, 255, 255, .08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, .15);
+            backdrop-filter: blur(10px)
+        }
+
+        .btn-s:hover {
+            background: rgba(102, 126, 234, .2);
+            border-color: #667eea;
+            transform: translateY(-2px)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="wrap">
+        <div class="orbit">
+            <div class="orbit-dot"></div>
+            <div class="orbit-center">🌍</div>
+        </div>
+        <div class="code">404</div>
+        <span class="astro">🧑‍🚀</span>
+        <h2>Houston, We Have a Problem!</h2>
+        <p>The page you're looking for has drifted into deep space. Let's get you back on track!</p>
+        <div class="btns">
+            <a href="app.html" class="btn btn-p">🏠 Employee App</a>
+            <a href="admin.html" class="btn btn-s">⚙️ Admin Panel</a>
+            <a href="index.html" class="btn btn-s">← Home</a>
+        </div>
+    </div>
+    <script>
+        const s = document.getElementById('stars');
+        for (let i = 0; i < 120; i++) {
+            const st = document.createElement('div'); st.className = 'star';
+            const sz = Math.random() * 3 + 1;
+            st.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random() * 100}%;left:${Math.random() * 100}%;animation-duration:${Math.random() * 3 + 2}s;animation-delay:${Math.random() * 4}s;`;
+            s.appendChild(st);
+        }
+    </script>
+</body>
+
+</html>
