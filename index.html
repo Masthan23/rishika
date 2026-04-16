@@ -247,6 +247,266 @@
         [data-theme="dark"] .alert-warn { color:#fbbf24; }
         [data-theme="dark"] .alert-info { color:#60a5fa; }
         @keyframes slideD { from{opacity:0;transform:translateY(-9px)} to{opacity:1;transform:translateY(0)} }
+
+        /* WARNING NOTICE STYLES */
+        .warning-notice {
+            margin: 20px 16px 0;
+            animation: warningSlideIn 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            perspective: 1000px;
+            display: none;
+        }
+        .warning-notice.show-cutoff { display: block; }
+        .hidden-after-cutoff { display: none !important; }
+        @keyframes warningSlideIn {
+            0% { opacity: 0; transform: translateY(-60px) rotateX(-18deg) scale(0.92); }
+            50% { opacity: 0.7; transform: translateY(-15px) rotateX(-7deg) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) rotateX(0deg) scale(1); }
+        }
+        .warning-container {
+            background: linear-gradient(135deg, #2a0c0f, #5a0b0f, #9f1239);
+            border: 2px solid rgba(248,113,113, 0.85);
+            border-radius: 24px;
+            padding: 28px 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 32px 90px rgba(156, 23, 38, 0.28), 0 12px 40px rgba(0,0,0,0.18);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            transform-style: preserve-3d;
+            animation: warningPulse 3s ease-in-out infinite, warningShake 0.6s ease-in-out 1.5s;
+            color: #fff;
+        }
+        @keyframes warningPulse {
+            0%, 100% { transform: translateZ(0) scale(1); box-shadow: 0 20px 60px rgba(239,68,68, 0.2), 0 8px 32px rgba(0,0,0,0.1); }
+            50% { transform: translateZ(10px) scale(1.02); box-shadow: 0 25px 70px rgba(239,68,68, 0.3), 0 12px 40px rgba(0,0,0,0.15); }
+        }
+        @keyframes warningShake {
+            0%, 100% { transform: translateZ(0) translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateZ(5px) translateX(-2px); }
+            20%, 40%, 60%, 80% { transform: translateZ(5px) translateX(2px); }
+        }
+        .warning-icon {
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 16px;
+            animation: warningIconBounce 2s ease-in-out infinite, warningIconGlow 3s ease-in-out infinite;
+            filter: drop-shadow(0 4px 8px rgba(239,68,68, 0.3));
+        }
+        @keyframes warningIconBounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0) rotateZ(0deg) scale(1); }
+            40% { transform: translateY(-15px) rotateZ(-10deg) scale(1.1); }
+            60% { transform: translateY(-8px) rotateZ(10deg) scale(1.05); }
+        }
+        @keyframes warningIconGlow {
+            0%, 100% { filter: drop-shadow(0 4px 8px rgba(239,68,68, 0.3)); }
+            50% { filter: drop-shadow(0 4px 12px rgba(239,68,68, 0.6)) drop-shadow(0 0 20px rgba(239,68,68, 0.4)); }
+        }
+        .warning-content {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+        .warning-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 20px rgba(239,68,68, 0.3);
+            letter-spacing: -0.02em;
+            animation: warningTitleGlow 3s ease-in-out infinite alternate;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        @keyframes warningTitleGlow {
+            0% { text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            100% { text-shadow: 0 2px 8px rgba(239,68,68, 0.4), 0 0 20px rgba(239,68,68, 0.2); }
+        }
+        @keyframes warningTitleShake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-1px); }
+            20%, 40%, 60%, 80% { transform: translateX(1px); }
+        }
+        .warning-message {
+            font-size: 1.05rem;
+            color: #f1f5f9;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+        .time-highlight {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #dc2626;
+            background: linear-gradient(45deg, #dc2626, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: timePulse 1s ease-in-out infinite;
+        }
+        @keyframes timePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .time-details {
+            margin-top: 16px;
+        }
+        .time-note {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(248,113,113, 0.4);
+            border-radius: 16px;
+            padding: 16px 20px;
+            font-size: 0.9rem;
+            color: #f8fafc;
+            font-weight: 600;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            line-height: 1.6;
+            letter-spacing: 0.01em;
+            animation: noteSlideIn 1s ease-out 2.2s both;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        @keyframes noteSlideIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .warning-decoration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .decoration-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(45deg, rgba(239,68,68, 0.1), rgba(245,158,11, 0.1));
+            animation: decorationFloat 4s ease-in-out infinite;
+        }
+        .circle-1 {
+            width: 80px;
+            height: 80px;
+            top: -20px;
+            right: -20px;
+            animation-delay: 0s;
+        }
+        .circle-2 {
+            width: 60px;
+            height: 60px;
+            bottom: -15px;
+            left: 20%;
+            animation-delay: 1.5s;
+        }
+        .circle-3 {
+            width: 40px;
+            height: 40px;
+            top: 30%;
+            left: -10px;
+            animation-delay: 3s;
+        }
+        @keyframes decorationFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.3; }
+            25% { transform: translateY(-10px) rotate(90deg) scale(1.1); opacity: 0.6; }
+            50% { transform: translateY(-20px) rotate(180deg) scale(0.9); opacity: 0.4; }
+            75% { transform: translateY(-10px) rotate(270deg) scale(1.05); opacity: 0.5; }
+        }
+        .clock-hands {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            transform: translate(-50%, -50%);
+            animation: clockRotate 60s linear infinite;
+        }
+        @keyframes clockRotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .hour-hand, .minute-hand {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: 50% 0;
+            background: rgba(239,68,68, 0.8);
+            border-radius: 2px;
+        }
+        .hour-hand {
+            width: 3px;
+            height: 25px;
+            margin-left: -1.5px;
+            margin-top: -25px;
+            animation: hourHandMove 43200s linear infinite;
+        }
+        .minute-hand {
+            width: 2px;
+            height: 35px;
+            margin-left: -1px;
+            margin-top: -35px;
+            animation: minuteHandMove 3600s linear infinite;
+        }
+        @keyframes hourHandMove {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes minuteHandMove {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 4K Quality Enhancements */
+        @media (min-resolution: 2dppx) {
+            .warning-container {
+                border-radius: 24px;
+                box-shadow: 0 25px 70px rgba(245,158,11, 0.25), 0 10px 40px rgba(0,0,0,0.12);
+            }
+            .detail-item {
+                border-radius: 14px;
+                backdrop-filter: blur(15px);
+            }
+        }
+
+        /* Responsive Design for Warning Notice */
+        @media (max-width: 480px) {
+            .warning-notice {
+                margin: 16px 12px 0;
+            }
+            .warning-container {
+                padding: 20px 16px;
+                border-radius: 16px;
+            }
+            .warning-icon {
+                font-size: 2.5rem;
+                margin-bottom: 12px;
+            }
+            .warning-title {
+                font-size: 1.2rem;
+            }
+            .warning-message {
+                font-size: 0.9rem;
+            }
+            .detail-item {
+                font-size: 0.8rem;
+                padding: 8px 12px;
+            }
+            .circle-1 {
+                width: 60px;
+                height: 60px;
+            }
+            .circle-2 {
+                width: 45px;
+                height: 45px;
+            }
+            .circle-3 {
+                width: 30px;
+                height: 30px;
+            }
+        }
+
         .suc-ov { position:fixed; inset:0; background:rgba(0,0,0,.82); backdrop-filter:blur(12px); display:none; align-items:center; justify-content:center; z-index:999; padding:20px; }
         .suc-ov.on { display:flex; }
         .suc-card { background:var(--card-solid); border:1px solid rgba(16,185,129,.3); border-radius:var(--r); padding:36px 24px; text-align:center; max-width:340px; width:100%; animation:pop .5s cubic-bezier(.34,1.56,.64,1); box-shadow:0 20px 60px rgba(0,0,0,.3); }
@@ -437,7 +697,7 @@
     <main class="main">
         <!-- EMAIL PAGE -->
         <div class="pg on" id="pgEmail">
-            <div class="hero">
+            <div class="hero" id="emailHero">
                 <div class="hero-img-w">
                     <div class="ring ring1"></div>
                     <div class="ring ring2"></div>
@@ -448,7 +708,33 @@
                 <p>Enter your @dashverse.ai work email to fetch your profile and mark attendance</p>
                 <div class="date-badge">📅 <span id="curDate"></span></div>
             </div>
-            <div class="card">
+
+            <!-- WARNING NOTICE -->
+            <div class="warning-notice" id="warningNotice">
+                <div class="warning-container">
+                    <div class="warning-icon">⏰</div>
+                    <div class="warning-content">
+                        <h3 class="warning-title">Attendance Window Closed</h3>
+                        <p class="warning-message">
+                            Current time: <span id="currentTimeDisplay" class="time-highlight">--:-- --</span>
+                        </p>
+                        <div class="time-details">
+                            <div class="time-note">Attendance marking is available daily from 12:00 AM to 2:00 PM. Please return tomorrow during business hours.</div>
+                        </div>
+                    </div>
+                    <div class="warning-decoration">
+                        <div class="decoration-circle circle-1"></div>
+                        <div class="decoration-circle circle-2"></div>
+                        <div class="decoration-circle circle-3"></div>
+                        <div class="clock-hands">
+                            <div class="hour-hand"></div>
+                            <div class="minute-hand"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="emailCard">
                 <div id="connStatus"></div>
                 <div id="emailAlerts"></div>
                 <div class="fgrp">
@@ -705,7 +991,19 @@
     function localFallback(action,data){
         if(action==='ping')return{success:true};
         if(action==='getEmployee'){const f=lsGet(LS.EMP).find(e=>e.email?.toLowerCase()===(data.email||'').toLowerCase());return f?{success:true,employee:stripAdminFields(f)}:{success:false,message:'Employee not found. Contact your HR admin.'};}
-        if(action==='markAttendance'){const atts=lsGet(LS.ATT),today=todayStr();if(atts.find(a=>a.email?.toLowerCase()===data.email?.toLowerCase()&&safeDateStr(a.date)===today))return{success:false,message:'Attendance already marked for today!'};const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});const rec={...data,date:today,checkIn:ts,status:'Present',recordId:'ATT'+Date.now()};delete rec.action;atts.push(rec);lsSet(LS.ATT,atts);return{success:true,message:'Attendance marked!',time:ts,date:today};}
+        if(action==='markAttendance'){
+            // Check if current time is before 2:00 PM (14:00)
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTimeInMinutes = currentHour * 60 + currentMinute;
+            const cutoffTimeInMinutes = 14 * 60; // 14:00 = 2:00 PM
+            
+            if(currentTimeInMinutes >= cutoffTimeInMinutes){
+                return{success:false,message:'Attendance can only be marked before 2:00 PM (14:00).'};
+            }
+            
+            const atts=lsGet(LS.ATT),today=todayStr();if(atts.find(a=>a.email?.toLowerCase()===data.email?.toLowerCase()&&safeDateStr(a.date)===today))return{success:false,message:'Attendance already marked for today!'};const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});const rec={...data,date:today,checkIn:ts,status:'Present',recordId:'ATT'+Date.now()};delete rec.action;atts.push(rec);lsSet(LS.ATT,atts);return{success:true,message:'Attendance marked!',time:ts,date:today};}
         if(action==='getAttendance')return{success:true,attendance:lsGet(LS.ATT).filter(a=>a.email?.toLowerCase()===(data.email||'').toLowerCase())};
         if(action==='applyLeave'){const lvs=lsGet(LS.LV);const lv={...data,id:'LV'+Date.now(),status:'Pending',appliedOn:new Date().toISOString()};delete lv.action;lvs.push(lv);lsSet(LS.LV,lvs);return{success:true,message:'Leave applied!'};}
         if(action==='getLeaves')return{success:true,leaves:lsGet(LS.LV).filter(l=>l.email?.toLowerCase()===(data.email||'').toLowerCase())};
@@ -836,10 +1134,28 @@
 
     function tick(){
         const now=new Date();
-        const e1=document.getElementById('hTime'),e2=document.getElementById('hDate'),e3=document.getElementById('curDate');
+        const e1=document.getElementById('hTime'),e2=document.getElementById('hDate'),e3=document.getElementById('curDate'),e4=document.getElementById('currentTimeDisplay');
         if(e1)e1.textContent=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
         if(e2)e2.textContent=now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
         if(e3)e3.textContent=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+        if(e4)e4.textContent=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+        updateCutoffNotice();
+    }
+    function updateCutoffNotice(){
+        const warning=document.getElementById('warningNotice');
+        const hero=document.getElementById('emailHero');
+        const card=document.getElementById('emailCard');
+        if(!warning||!hero||!card)return;
+        const now=new Date();
+        const isCutoff=now.getHours()>=14;
+        warning.classList.toggle('show-cutoff', isCutoff);
+        hero.classList.toggle('hidden-after-cutoff', isCutoff);
+        card.classList.toggle('hidden-after-cutoff', isCutoff);
+        if(isCutoff){
+            warning.querySelector('.warning-message')?.classList.add('warning-message-active');
+        } else {
+            warning.querySelector('.warning-message')?.classList.remove('warning-message-active');
+        }
     }
     function setMinDates(){
         const t=todayStr();
@@ -1067,6 +1383,20 @@
 
     async function markAttendance(){
         if(marked){toast('ℹ️ Already Marked','Attendance already recorded today','warn');return;}
+        
+        // Check if current time is before 2:00 PM (14:00)
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentTimeInMinutes = currentHour * 60 + currentMinute;
+        const cutoffTimeInMinutes = 14 * 60; // 14:00 = 2:00 PM
+        
+        if(currentTimeInMinutes >= cutoffTimeInMinutes){
+            showAlert('dashAlerts','⏰ Attendance can only be marked before 2:00 PM (14:00).','warn');
+            toast('⏰ Time Limit Exceeded','Attendance marking is only allowed before 2:00 PM','warn');
+            return;
+        }
+        
         const selectedProj=[...empSelectedProjects].join(', ');
         if(projectList.length>0&&empSelectedProjects.size===0){
             showAlert('dashAlerts','⚠️ Please select at least one project before marking attendance.','warn');
