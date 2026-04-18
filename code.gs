@@ -1112,15 +1112,31 @@ function captureAbsentUsers(data) {
   
   for (let i = 0; i < empRows.length; i++) {
     const empEmail = normalizeEmail(empRows[i][iMail]);
+    // Get and parse join date
+    let joinDateStr = '';
+    if (eHdr['joindate'] !== undefined) {
+      joinDateStr = empRows[i][eHdr['joindate']];
+    }
+    let joinDate = null;
+    if (joinDateStr) {
+      // Try to parse joinDateStr as yyyy-MM-dd
+      joinDate = new Date(joinDateStr);
+      if (isNaN(joinDate.getTime())) {
+        // Try alternate parsing if needed
+        joinDate = new Date(joinDateStr.replace(/\//g, '-'));
+      }
+    }
+    // If joinDate is after today, skip absent marking
+    if (joinDate && joinDate > new Date(today)) {
+      continue;
+    }
     if (!attendedEmails.has(empEmail)) {
       const absentLastRow = absentSheet.getLastRow();
       let alreadyRecorded = false;
-      
       if (absentLastRow > 1) {
         const absentRows = absentSheet.getRange(2, 1, absentLastRow - 1, absentSheet.getLastColumn()).getValues();
         const absMailIdx = absHdr['email'] !== undefined ? absHdr['email'] : 2;
         const absDateIdx = absHdr['date'] !== undefined ? absHdr['date'] : 0;
-        
         for (let j = 0; j < absentRows.length; j++) {
           const absDate = absentRows[j][absDateIdx] ? absentRows[j][absDateIdx].toString().substring(0, 10) : '';
           if (absDate === today && normalizeEmail(absentRows[j][absMailIdx]) === empEmail) {
@@ -1129,7 +1145,6 @@ function captureAbsentUsers(data) {
           }
         }
       }
-      
       if (!alreadyRecorded) {
         const newAbsentRow = new Array(totalAbsentCols).fill('');
         if (absHdr['date'] !== undefined) newAbsentRow[absHdr['date']] = today;
@@ -1139,7 +1154,6 @@ function captureAbsentUsers(data) {
         if (absHdr['department'] !== undefined) newAbsentRow[absHdr['department']] = empRows[i][iDept] || '';
         if (absHdr['status'] !== undefined) newAbsentRow[absHdr['status']] = 'Absent';
         if (absHdr['recordedon'] !== undefined) newAbsentRow[absHdr['recordedon']] = recordedOn;
-        
         absentSheet.appendRow(newAbsentRow);
         absentCount++;
       }
@@ -1254,6 +1268,46 @@ function applyLeave(data) {
     Logger.log('Employee lookup failed during applyLeave: ' + lookupErr.toString());
   }
 
+  // Check if employee has completed leaves (already used all available leaves)
+  let leaveWarning = '';
+  let totalApprovedDays = 0;
+  let totalPendingDays = 0;
+  
+  try {
+    if (sheet.getLastRow() > 1) {
+      const lastRow = sheet.getLastRow();
+      const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+      const hdr = getLeaveHeaders(sheet);
+      
+      for (let i = 0; i < rows.length; i++) {
+        const rowEmail = normalizeEmail(getValueByHeader(rows[i], hdr, 'email', 2));
+        const rowStatus = normalizeLeaveStatus(getValueByHeader(rows[i], hdr, 'status', 10));
+        const rowDays = parseInt(getValueByHeader(rows[i], hdr, 'days', 8)) || 0;
+        
+        if (rowEmail === employeeEmail) {
+          if (rowStatus === 'Approved') {
+            totalApprovedDays += rowDays;
+          } else if (rowStatus === 'Pending') {
+            totalPendingDays += rowDays;
+          }
+        }
+      }
+    }
+    
+    // Check if leaves are exhausted (assuming 30 days annual limit)
+    const ANNUAL_LEAVE_LIMIT = 30;
+    const totalUsedAndPending = totalApprovedDays + totalPendingDays + days;
+    
+    if (totalUsedAndPending > ANNUAL_LEAVE_LIMIT) {
+      leaveWarning = '⚠️ WARNING: You have completed/exhausted your annual leaves (' + ANNUAL_LEAVE_LIMIT + ' days). ' +
+                     'Your salary will be DEDUCTED for this leave application. ' +
+                     'Total approved: ' + totalApprovedDays + ' days, Pending: ' + totalPendingDays + ' days, Current request: ' + days + ' days.';
+      Logger.log('Leave quota exceeded for ' + employeeEmail + ': ' + leaveWarning);
+    }
+  } catch (checkErr) {
+    Logger.log('Error checking leave balance: ' + checkErr.toString());
+  }
+
   const leavePayload = {
     empId: data.empId || (employee ? employee.id : '') || '',
     email: employeeEmail,
@@ -1266,7 +1320,15 @@ function applyLeave(data) {
     manager: data.manager || (employee ? employee.manager : '') || '',
     managerEmail: normalizeEmail(data.managerEmail || (employee ? employee.managerEmail : '') || ''),
     reportingManager: data.reportingManager || (employee ? employee.reportingManager : '') || '',
-    reportingManagerEmail: normalizeEmail(data.reportingManagerEmail || (employee ? employee.reportingManagerEmail : '') || '')
+    reportingManagerEmail: normalizeEmail(data.reportingManagerEmail || (employee ? employee.reportingManagerEmail : '') || ''),
+    warning: leaveWarning || null,
+    leavesSummary: {
+      approvedDays: totalApprovedDays,
+      pendingDays: totalPendingDays,
+      newRequestDays: days,
+      totalUsedAndPending: totalApprovedDays + totalPendingDays + days,
+      annualLimit: 30
+    }
   };
 
   sheet.appendRow([
@@ -1289,10 +1351,22 @@ function applyLeave(data) {
     Logger.log(notificationResult.issues[notificationResult.issues.length - 1]);
   }
 
+  const resultMessage = leaveWarning 
+    ? 'Leave applied successfully! ' + leaveWarning
+    : 'Leave applied successfully!';
+
   return {
     success: true,
-    message: 'Leave applied successfully!',
+    message: resultMessage,
+    warning: leaveWarning || null,
     id: leaveId,
+    leavesSummary: {
+      approvedDays: totalApprovedDays,
+      pendingDays: totalPendingDays,
+      newRequestDays: days,
+      totalUsedAndPending: totalApprovedDays + totalPendingDays + days,
+      annualLimit: 30
+    },
     notification: notificationResult
   };
 }
@@ -1565,7 +1639,10 @@ function findManagerEmailByReference(referenceValue, managerType) {
 
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let sheet = ss.getSheetByName('Managers');
-  if (!sheet || sheet.getLastRow() < 2) return '';
+  if (!sheet || sheet.getLastRow() < 2) {
+    Logger.log('findManagerEmailByReference: Managers sheet not found or empty');
+    return '';
+  }
 
   const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
   const hdr = getManagerHeaders(sheet);
@@ -1575,12 +1652,20 @@ function findManagerEmailByReference(referenceValue, managerType) {
     const rowType = (getValueByHeader(rows[i], hdr, 'managertype', 1) || '').toString().trim().toLowerCase();
     const rowName = (getValueByHeader(rows[i], hdr, 'name', 2) || '').toString().trim().toLowerCase();
     const rowEmail = normalizeEmail(getValueByHeader(rows[i], hdr, 'email', 3));
+    
+    // Log for debugging
+    if ((ref && rowEmail) || refText) {
+      Logger.log('Manager lookup: ref=' + ref + ', rowEmail=' + rowEmail + ', refText=' + refText + ', rowName=' + rowName);
+    }
+    
     if (wantedType && rowType && rowType !== wantedType) continue;
     if ((ref && rowEmail === ref) || (refText && rowName === refText)) {
+      Logger.log('Manager found: ' + rowEmail);
       return rowEmail || '';
     }
   }
 
+  Logger.log('No manager found for reference: ' + referenceValue + ', type: ' + managerType);
   return '';
 }
 
@@ -1593,14 +1678,51 @@ function sendLeaveApplicationEmail(employee, data, leaveId) {
     const fromDate = data.fromDate || '';
     const toDate = data.toDate || '';
     const reason = data.reason || 'No reason provided';
-    const managerReference = data.managerEmail || employee.managerEmail || data.manager || employee.manager || '';
-    const managerEmail = normalizeEmail(data.managerEmail || employee.managerEmail || '') ||
-      findManagerEmailByReference(managerReference, 'manager');
+    
+    // Better manager email resolution with multiple fallbacks
+    let managerEmail = '';
+    if (data.managerEmail) {
+      managerEmail = normalizeEmail(data.managerEmail);
+    } else if (employee.managerEmail) {
+      managerEmail = normalizeEmail(employee.managerEmail);
+    } else if (data.manager) {
+      // Try to find manager by name from Managers sheet
+      managerEmail = findManagerEmailByReference(data.manager, 'manager') || 
+                     findManagerEmailByReference(data.manager, '');
+    } else if (employee.manager) {
+      // Try to find manager by name from Managers sheet
+      managerEmail = findManagerEmailByReference(employee.manager, 'manager') || 
+                     findManagerEmailByReference(employee.manager, '');
+    }
+    
     const managerName = data.manager || employee.manager || 'Manager';
-    const reportingManagerReference = data.reportingManagerEmail || employee.reportingManagerEmail || data.reportingManager || employee.reportingManager || '';
-    const reportingManagerEmail = normalizeEmail(data.reportingManagerEmail || employee.reportingManagerEmail || '') ||
-      findManagerEmailByReference(reportingManagerReference, 'reporting');
+    Logger.log('Leave application: Employee=' + empEmail + ', Manager=' + managerEmail);
+    
+    // Better reporting manager email resolution
+    let reportingManagerEmail = '';
+    if (data.reportingManagerEmail) {
+      reportingManagerEmail = normalizeEmail(data.reportingManagerEmail);
+    } else if (employee.reportingManagerEmail) {
+      reportingManagerEmail = normalizeEmail(employee.reportingManagerEmail);
+    } else if (data.reportingManager) {
+      reportingManagerEmail = findManagerEmailByReference(data.reportingManager, 'reporting') || 
+                              findManagerEmailByReference(data.reportingManager, '');
+    } else if (employee.reportingManager) {
+      reportingManagerEmail = findManagerEmailByReference(employee.reportingManager, 'reporting') || 
+                              findManagerEmailByReference(employee.reportingManager, '');
+    }
+    
     const reportingManagerName = data.reportingManager || employee.reportingManager || 'Reporting Manager';
+    Logger.log('Reporting Manager lookup: ' + reportingManagerEmail);
+
+    // Build warning section if present
+    let warningHtml = '';
+    if (data.warning) {
+      warningHtml = '<div style="background-color: #fff3cd; padding: 15px; border-left: 4px solid #ff9800; margin: 15px 0; border-radius: 4px;">' +
+        '<p style="color: #856404; margin: 0;"><strong>⚠️ WARNING:</strong></p>' +
+        '<p style="color: #856404; margin: 5px 0 0 0;">' + data.warning.replace(/⚠️ WARNING: /g, '') + '</p>' +
+        '</div>';
+    }
 
     const emailBody = '<html>' +
       '<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">' +
@@ -1616,23 +1738,35 @@ function sendLeaveApplicationEmail(employee, data, leaveId) {
       '<p><strong>Reason:</strong> ' + reason + '</p>' +
       '<p><strong>Status:</strong> <span style="color: #f59e0b; font-weight: bold;">Pending Approval</span></p>' +
       '</div>' +
+      warningHtml +
       '<p style="color: #666; font-size: 0.9em;">Your leave request has been submitted for approval. Your manager will review and respond shortly.</p>' +
       '<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">' +
       '<p style="color: #999; font-size: 0.85em;">AttendPro System | Do not reply to this email</p>' +
       '</div>' +
       '</body>' +
       '</html>';
+    
+    // Send email to employee
     if (empEmail) {
-      MailApp.sendEmail({
-        to: empEmail,
-        subject: 'Leave Application Confirmation - ' + empName,
-        htmlBody: emailBody
-      });
-      result.sent.push('employee:' + empEmail);
+      try {
+        MailApp.sendEmail({
+          to: empEmail,
+          subject: 'Leave Application Confirmation - ' + empName,
+          htmlBody: emailBody
+        });
+        result.sent.push('employee:' + empEmail);
+        Logger.log('Employee notification sent to: ' + empEmail);
+      } catch (empEmailErr) {
+        result.issues.push('Failed to send employee email to ' + empEmail + ': ' + empEmailErr.toString());
+        Logger.log(result.issues[result.issues.length - 1]);
+      }
     } else {
       result.issues.push('Employee email missing for leave confirmation');
+      Logger.log(result.issues[result.issues.length - 1]);
     }
-    if (managerEmail) {
+    
+    // Send email to manager
+    if (managerEmail && managerEmail.indexOf('@') > 0) {
       const managerEmailBody = '<html>' +
         '<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">' +
         '<div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">' +
@@ -1648,6 +1782,7 @@ function sendLeaveApplicationEmail(employee, data, leaveId) {
         '<p><strong>To Date:</strong> ' + toDate + '</p>' +
         '<p><strong>Reason:</strong> ' + reason + '</p>' +
         '</div>' +
+        warningHtml +
         '<p style="color: #666; margin-top: 15px;"><strong>Action Required:</strong> Please visit the AttendPro Manager Portal to approve or reject this request.</p>' +
         '<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">' +
         '<p style="color: #999; font-size: 0.85em;">AttendPro System | Do not reply to this email</p>' +
@@ -1655,17 +1790,25 @@ function sendLeaveApplicationEmail(employee, data, leaveId) {
         '</body>' +
         '</html>';
 
-      MailApp.sendEmail({
-        to: managerEmail,
-        subject: 'Leave Request for Approval - ' + empName,
-        htmlBody: managerEmailBody
-      });
-      result.sent.push('manager:' + managerEmail);
+      try {
+        MailApp.sendEmail({
+          to: managerEmail,
+          subject: 'Leave Request for Approval - ' + empName,
+          htmlBody: managerEmailBody
+        });
+        result.sent.push('manager:' + managerEmail);
+        Logger.log('Manager notification sent to: ' + managerEmail);
+      } catch (mgrEmailErr) {
+        result.issues.push('Failed to send manager email to ' + managerEmail + ': ' + mgrEmailErr.toString());
+        Logger.log(result.issues[result.issues.length - 1]);
+      }
     } else {
-      result.issues.push('Manager email missing for leave notification. Employee: ' + empEmail + ', manager ref: ' + (employee.manager || employee.managerEmail || ''));
+      result.issues.push('Manager email missing or invalid for leave notification. Employee: ' + empEmail + ', manager ref: ' + (employee.manager || employee.managerEmail || 'Not found') + ', resolved email: ' + managerEmail);
       Logger.log(result.issues[result.issues.length - 1]);
     }
-    if (reportingManagerEmail && reportingManagerEmail !== managerEmail) {
+    
+    // Send email to reporting manager
+    if (reportingManagerEmail && reportingManagerEmail.indexOf('@') > 0 && reportingManagerEmail !== managerEmail) {
       const reportingManagerEmailBody = '<html>' +
         '<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">' +
         '<div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">' +
@@ -1681,6 +1824,7 @@ function sendLeaveApplicationEmail(employee, data, leaveId) {
         '<p><strong>To Date:</strong> ' + toDate + '</p>' +
         '<p><strong>Reason:</strong> ' + reason + '</p>' +
         '</div>' +
+        warningHtml +
         '<p style="color: #666; margin-top: 15px;">This request has been forwarded to the direct manager for approval.</p>' +
         '<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">' +
         '<p style="color: #999; font-size: 0.85em;">AttendPro System | Do not reply to this email</p>' +
@@ -1688,18 +1832,24 @@ function sendLeaveApplicationEmail(employee, data, leaveId) {
         '</body>' +
         '</html>';
 
-      MailApp.sendEmail({
-        to: reportingManagerEmail,
-        subject: 'Leave Request Notification - ' + empName,
-        htmlBody: reportingManagerEmailBody
-      });
-      result.sent.push('reporting:' + reportingManagerEmail);
-    } else if (!reportingManagerEmail) {
-      result.issues.push('Reporting manager email missing for leave notification. Employee: ' + empEmail + ', reporting manager ref: ' + (employee.reportingManager || employee.reportingManagerEmail || ''));
+      try {
+        MailApp.sendEmail({
+          to: reportingManagerEmail,
+          subject: 'Leave Request Notification - ' + empName,
+          htmlBody: reportingManagerEmailBody
+        });
+        result.sent.push('reporting:' + reportingManagerEmail);
+        Logger.log('Reporting manager notification sent to: ' + reportingManagerEmail);
+      } catch (reportEmailErr) {
+        result.issues.push('Failed to send reporting manager email to ' + reportingManagerEmail + ': ' + reportEmailErr.toString());
+        Logger.log(result.issues[result.issues.length - 1]);
+      }
+    } else if (!reportingManagerEmail || reportingManagerEmail.indexOf('@') === -1) {
+      result.issues.push('Reporting manager email missing or invalid for leave notification. Employee: ' + empEmail + ', reporting manager ref: ' + (employee.reportingManager || employee.reportingManagerEmail || 'Not found') + ', resolved email: ' + reportingManagerEmail);
       Logger.log(result.issues[result.issues.length - 1]);
     }
 
-    Logger.log('Leave notification emails sent successfully for Leave ID: ' + leaveId);
+    Logger.log('Leave notification emails completed for Leave ID: ' + leaveId + '. Sent: ' + JSON.stringify(result.sent) + ', Issues: ' + JSON.stringify(result.issues));
     result.ok = result.sent.length > 0;
     return result;
   } catch (err) {
@@ -1715,6 +1865,7 @@ function sendLeaveStatusUpdateEmail(employee, leaveRecord) {
     const empEmail = normalizeEmail(employee.email);
     if (!empEmail) {
       result.issues.push('Employee email missing for leave status update');
+      Logger.log(result.issues[result.issues.length - 1]);
       return result;
     }
 
@@ -1746,7 +1897,7 @@ function sendLeaveStatusUpdateEmail(employee, leaveRecord) {
       '<p>Dear ' + empName + ',</p>' +
       '<p>Your leave request has been updated.</p>' +
       '<div style="background-color: #fff; padding: 15px; border-left: 4px solid ' + statusColor + '; margin: 15px 0;">' +
-      '<p><strong>Leave ID:</strong> ' + (leaveRecord.leaveId || '') + '</p>' +
+      '<p><strong>Leave ID:</strong> ' + (leaveRecord.leaveId || leaveRecord.id || '') + '</p>' +
       '<p><strong>Leave Type:</strong> ' + leaveType + '</p>' +
       '<p><strong>From Date:</strong> ' + fromDate + '</p>' +
       '<p><strong>To Date:</strong> ' + toDate + '</p>' +
@@ -1760,13 +1911,72 @@ function sendLeaveStatusUpdateEmail(employee, leaveRecord) {
       '</body>' +
       '</html>';
 
-    MailApp.sendEmail({
-      to: empEmail,
-      subject: 'Leave Request ' + status + ' - ' + empName,
-      htmlBody: htmlBody
-    });
-    result.sent.push('employee:' + empEmail);
-    result.ok = true;
+    // Send email to employee
+    try {
+      MailApp.sendEmail({
+        to: empEmail,
+        subject: 'Leave Request ' + status + ' - ' + empName,
+        htmlBody: htmlBody
+      });
+      result.sent.push('employee:' + empEmail);
+      Logger.log('Leave status update email sent to employee: ' + empEmail);
+    } catch (empEmailErr) {
+      result.issues.push('Failed to send employee status email: ' + empEmailErr.toString());
+      Logger.log(result.issues[result.issues.length - 1]);
+    }
+    
+    // Also send notification to manager about the decision
+    if (status === 'Approved' || status === 'Rejected') {
+      let managerEmail = '';
+      if (employee.managerEmail) {
+        managerEmail = normalizeEmail(employee.managerEmail);
+      } else if (employee.manager) {
+        managerEmail = findManagerEmailByReference(employee.manager, 'manager') || 
+                       findManagerEmailByReference(employee.manager, '');
+      }
+      
+      if (managerEmail && managerEmail.indexOf('@') > 0) {
+        const managerNotificationHtml = '<html>' +
+          '<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">' +
+          '<div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">' +
+          '<h2 style="color: ' + statusColor + '; margin-top: 0;">Leave Request ' + status + ' - ' + empName + '</h2>' +
+          '<p>Dear Manager,</p>' +
+          '<p>The following leave request has been ' + status.toLowerCase() + ':</p>' +
+          '<div style="background-color: #fff; padding: 15px; border-left: 4px solid ' + statusColor + '; margin: 15px 0;">' +
+          '<p><strong>Employee Name:</strong> ' + empName + '</p>' +
+          '<p><strong>Employee Email:</strong> ' + empEmail + '</p>' +
+          '<p><strong>Leave ID:</strong> ' + (leaveRecord.leaveId || leaveRecord.id || '') + '</p>' +
+          '<p><strong>Leave Type:</strong> ' + leaveType + '</p>' +
+          '<p><strong>From Date:</strong> ' + fromDate + '</p>' +
+          '<p><strong>To Date:</strong> ' + toDate + '</p>' +
+          '<p><strong>Status:</strong> <span style="color: ' + statusColor + '; font-weight: bold;">' + status + '</span></p>' +
+          extraHtml +
+          '</div>' +
+          '<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">' +
+          '<p style="color: #999; font-size: 0.85em;">AttendPro System | Do not reply to this email</p>' +
+          '</div>' +
+          '</body>' +
+          '</html>';
+        
+        try {
+          MailApp.sendEmail({
+            to: managerEmail,
+            subject: 'Leave Request ' + status + ' - ' + empName,
+            htmlBody: managerNotificationHtml
+          });
+          result.sent.push('manager:' + managerEmail);
+          Logger.log('Leave status update email sent to manager: ' + managerEmail);
+        } catch (mgrEmailErr) {
+          result.issues.push('Failed to send manager status email: ' + mgrEmailErr.toString());
+          Logger.log(result.issues[result.issues.length - 1]);
+        }
+      } else {
+        Logger.log('Manager email not found for leave status update notification. Employee: ' + empEmail);
+      }
+    }
+    
+    result.ok = result.sent.length > 0;
+    Logger.log('Leave status update emails completed. Sent: ' + JSON.stringify(result.sent) + ', Issues: ' + JSON.stringify(result.issues));
     return result;
   } catch (err) {
     Logger.log('Error sending leave status email: ' + err.toString());

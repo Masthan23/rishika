@@ -772,22 +772,6 @@
                             <button class="btn btn-err btn-sm" onclick="clearAllProjects()">🗑️ Clear All</button>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-hdr"><div class="card-t">👤 Assign Project to Employee</div></div>
-                        <div class="frow" style="margin-bottom:12px;">
-                            <div>
-                                <label style="display:block;font-size:.74rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:7px;">Employee</label>
-                                <select class="fsel2" id="assignEmpSel" style="width:100%;" onchange="loadEmpCurrentProj()"><option value="">Select Employee...</option></select>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:.74rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:7px;">Project</label>
-                                <select class="fsel2" id="assignProjSel" style="width:100%;"><option value="">Select Project...</option></select>
-                            </div>
-                        </div>
-                        <div id="assignCurrentProj" style="margin-bottom:11px;font-size:.81rem;color:var(--muted);"></div>
-                        <div id="assignAlerts"></div>
-                        <button class="btn btn-ok" id="assignBtn" onclick="assignProject()">✅ Assign Project</button>
-                    </div>
                 </div>
 
                 <!-- PROFILES -->
@@ -1461,13 +1445,8 @@
         function showProjAlert(msg,type){const cls={ok:'al-ok',err:'al-err',warn:'al-warn'};const el=document.getElementById('projAlerts');if(!el)return;el.innerHTML=`<div class="alert ${cls[type]||'al-ok'}">${msg}</div>`;setTimeout(()=>{if(el)el.innerHTML=''},4000);}
 
         function populateProjDropdowns(){
-            const assignSel=document.getElementById('assignProjSel');if(assignSel){const cur=assignSel.value;assignSel.innerHTML='<option value="">Select Project...</option>'+projectList.map(p=>`<option value="${esc(p)}"${p===cur?' selected':''}>${p}</option>`).join('')}
-            const empSel=document.getElementById('assignEmpSel');if(empSel){const cur=empSel.value;empSel.innerHTML='<option value="">Select Employee...</option>'+allEmp.map(e=>`<option value="${esc(e.email)}"${e.email===cur?' selected':''}>${e.name} (${e.email})</option>`).join('')}
             initMSDropdown('modal');
         }
-        function loadEmpCurrentProj(){const email=document.getElementById('assignEmpSel').value,el=document.getElementById('assignCurrentProj');if(!email){el.innerHTML='';return}const emp=allEmp.find(e=>e.email===email);if(emp){const proj=emp.currentProject||emp.project||'Not Assigned';el.innerHTML=`Current: <strong style="color:var(--p);">🎬 ${proj}</strong>`;const sel=document.getElementById('assignProjSel');if(sel&&proj!=='Not Assigned')sel.value=proj}}
-        async function assignProject(){const email=document.getElementById('assignEmpSel').value,project=document.getElementById('assignProjSel').value;if(!email){showAssignAlert('⚠️ Select an employee','warn');return}if(!project){showAssignAlert('⚠️ Select a project','warn');return}const btn=document.getElementById('assignBtn');btn.innerHTML='<div class="spin"></div> Assigning...';btn.disabled=true;const emp=allEmp.find(e=>e.email===email),prevProj=emp?.currentProject;if(emp)emp.currentProject=project;renderEmp();const r=await callAPI('assignProject',{email,project});CACHE.clear('getEmployees');btn.innerHTML='✅ Assign Project';btn.disabled=false;if(r.success){showAssignAlert(`✅ ${r.message||'Assigned!'}`, 'ok');toast('✅ Assigned!',`${emp?.name||email} → ${project}`,'ok');loadEmpCurrentProj();refreshDash()}else{if(emp)emp.currentProject=prevProj;renderEmp();showAssignAlert(`❌ ${r.message}`,'err')}}
-        function showAssignAlert(msg,type){const cls={ok:'al-ok',err:'al-err',warn:'al-warn'};const el=document.getElementById('assignAlerts');if(!el)return;el.innerHTML=`<div class="alert ${cls[type]}">${msg}</div>`;setTimeout(()=>{if(el)el.innerHTML=''},3500);}
 
         function refreshDash(){
             document.getElementById('stTotalEmp').textContent=allEmp.length;const today=todayStr();const todayAtt=allAtt.filter(a=>(a.date||'').toString().substring(0,10)===today);
