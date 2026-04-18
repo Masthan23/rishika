@@ -450,10 +450,10 @@
                     </button>
                 </div>
             </div>
-            <div class="domain-note">🌐 <div><strong>@dashverse.ai domain required.</strong> Your email must match the managerEmail or reportingManagerEmail field in employee records.</div></div>
+            <div class="domain-note">🌐 <div><strong>Company domain required.</strong> Your email must match the managerEmail or reportingManagerEmail field in employee records.</div></div>
             <div id="loginAlert"></div>
             <div class="fgrp">
-                <label class="flbl">Work Email Address (@dashverse.ai)</label>
+                <label class="flbl">Work Email Address (@dashverse.ai / @dashversemail.com / @dashtoon.com)</label>
                 <div class="iw"><span class="iico">📧</span><input type="email" class="finp" id="mgrEmail" placeholder="your.email@dashverse.ai" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email"/></div>
             </div>
             <div class="fgrp">
@@ -464,9 +464,8 @@
             <div class="hint-box">
                 <div class="hb-row"><span>👔</span><span><strong>Manager password:</strong> manager@123</span></div>
                 <div class="hb-row"><span>📊</span><span><strong>Rep. Manager password:</strong> reporting@123</span></div>
-                <div style="margin-top:7px;font-size:.68rem;opacity:.7;line-height:1.5;">Your <strong>@dashverse.ai</strong> email must be entered by HR in the Manager Email or Reporting Manager Email field of each employee.</div>
+                <div style="margin-top:7px;font-size:.68rem;opacity:.7;line-height:1.5;">Your company email (@dashverse.ai, @dashversemail.com, or @dashtoon.com) must be entered by HR in the Manager Email or Reporting Manager Email field of each employee.</div>
             </div>
-            <a href="admin.html" class="lnk">← HR Panel</a>
             <a href="app.html" class="lnk" style="margin-top:6px;">← Employee Portal</a>
         </div>
     </div>
@@ -508,8 +507,8 @@
                 <div class="nav-sec">Records</div>
                 <div class="nav-item" data-panel="att" onclick="showPanel('att');closeSB()"><span class="n-ic">✅</span>Attendance Log</div>
                 <div class="nav-sec">Links</div>
-                <div class="nav-item" onclick="window.open('app.html','_blank');closeSB()"><span class="n-ic">🔗</span>Employee Portal</div>
-                <div class="nav-item" onclick="window.open('admin.html','_blank');closeSB()"><span class="n-ic">👩‍💼</span>HR Panel</div>
+                <div class="nav-item" onclick="navigateToPortal('app.html','empOk');closeSB()"><span class="n-ic">🔗</span>Employee Portal</div>
+                <div class="nav-item" onclick="navigateToPortal('admin.html','hrOk');closeSB()"><span class="n-ic">👩‍💼</span>HR Panel</div>
             </nav>
             <div class="sb-ftr">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;">
@@ -722,7 +721,7 @@
         // ===== CONSTANTS =====
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzk-1uzsKJRGcvqc8_CE4UGdUhIZL62Caar5ZYxpvcYV6lgchz2MfsMlMdlrJXDtMVX/exec';
         const TIMEOUT_MS = 12000;
-        const ALLOWED_DOMAIN = '@dashverse.ai';
+        const ALLOWED_DOMAINS = ['@dashverse.ai', '@dashversemail.com', '@dashtoon.com'];
         const ROLE_PASSWORDS = { manager: 'manager@123', reporting: 'reporting@123' };
 
         const PANEL_META = {
@@ -744,7 +743,7 @@
         const LS = { EMP:'atp_emp', ATT:'atp_att', LV:'atp_lv' };
         const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||'[]')}catch{return[]}};
         const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
-        const isDashverseEmail=email=>email&&email.toLowerCase().endsWith(ALLOWED_DOMAIN);
+        const isDashverseEmail=email=>email&&ALLOWED_DOMAINS.some(d=>email.toLowerCase().endsWith(d));
         const isValidEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
         const ini=(n='')=>(n||'U').split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase()||'?';
         const esc=s=>(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
@@ -806,7 +805,7 @@
 
         async function doLogin(){
             const email=document.getElementById('mgrEmail').value.trim().toLowerCase();const pass=document.getElementById('mgrPass').value.trim();const role=selRoleTab;
-            if(!email){loginMsg('⚠️ Enter your work email address','warn');return;}if(!isValidEmail(email)){loginMsg('⚠️ Invalid email format','warn');return;}if(!isDashverseEmail(email)){loginMsg(`⚠️ Only @dashverse.ai email addresses are accepted.`,'err');return;}if(!pass){loginMsg('⚠️ Enter your password','warn');return;}
+            if(!email){loginMsg('⚠️ Enter your work email address','warn');return;}if(!isValidEmail(email)){loginMsg('⚠️ Invalid email format','warn');return;}if(!isDashverseEmail(email)){loginMsg(`⚠️ Only @dashverse.ai, @dashversemail.com, or @dashtoon.com email addresses are accepted.`,'err');return;}if(!pass){loginMsg('⚠️ Enter your password','warn');return;}
             if(pass!==ROLE_PASSWORDS[role]){loginMsg(`❌ Incorrect password for ${role==='reporting'?'Reporting Manager':'Manager'} role`,'err');return;}
             const btn=document.getElementById('loginBtn');btn.innerHTML='<div class="spin"></div> Verifying...';btn.disabled=true;
             const empRes=await callAPI('getEmployees',{},true);btn.innerHTML='🔐 Access Manager Portal';btn.disabled=false;
@@ -822,6 +821,7 @@
         }
 
         function logout(){sessionStorage.removeItem('mgrSession');clearCache();dataLoaded=false;document.getElementById('loginPg').style.display='flex';document.getElementById('mgrApp').classList.remove('on');document.getElementById('mgrEmail').value='';document.getElementById('mgrPass').value='';myEmail='';myRole='';myName='';allEmp=[];allAtt=[];allLv=[];myTeam=[];myTeamAtt=[];myTeamLv=[];checkConn();}
+        function navigateToPortal(dest,flagKey){sessionStorage.setItem(flagKey,'1');sessionStorage.setItem('fromIndexPage','1');window.location.href=dest;}
         function loginMsg(msg,type){const cls={ok:'al-ok',err:'al-err',warn:'al-warn',info:'al-info'};document.getElementById('loginAlert').innerHTML=`<div class="alert ${cls[type]}">${msg}</div>`;setTimeout(()=>{const el=document.getElementById('loginAlert');if(el)el.innerHTML=''},6000);}
         function initApp(){document.getElementById('todayDateLbl').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});updateSidebarUser();if(!dataLoaded)loadAll();}
         function updateSidebarUser(){const roleLabel=myRole==='reporting'?'📊 Reporting Manager':'👔 Manager';document.getElementById('sbAv').textContent=ini(myName);document.getElementById('sbUserName').textContent=myName;document.getElementById('sbUserEmail').textContent=myEmail;document.getElementById('sbUserRole').textContent=roleLabel;}
