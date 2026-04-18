@@ -555,7 +555,8 @@
                 <div class="nav-sec">Management</div>
                 <div class="nav-item" data-panel="proj" onclick="showPanel('proj');closeSB()"><span class="n-ic">🎬</span>Project Manager</div>
                 <div class="nav-item" data-panel="contracts" onclick="showPanel('contracts');closeSB()"><span class="n-ic">📄</span>Contracts</div>
-                <div class="nav-item" data-panel="profiles" onclick="showPanel('profiles');closeSB()"><span class="n-ic">🪪</span>Profiles</div>
+                <div class="nav-item" data-panel="profile-manager" onclick="showPanel('profile-manager');closeSB()"><span class="n-ic">👔</span>Add Manager Profile</div>
+                <div class="nav-item" data-panel="profile-hr" onclick="showPanel('profile-hr');closeSB()"><span class="n-ic">👩‍💼</span>Add HR Profile</div>
                 <div class="nav-sec">Reports & Tools</div>
                 <div class="nav-item" data-panel="rpt" onclick="showPanel('rpt');closeSB()"><span class="n-ic">📈</span>Reports</div>
                 <div class="nav-item" onclick="runSetup();closeSB()"><span class="n-ic">⚙️</span>Setup Sheets</div>
@@ -615,7 +616,8 @@
                         <div class="qa" onclick="openAddEmp()"><div class="qa-ic">➕</div><div class="qa-lbl">Add Employee</div></div>
                         <div class="qa" onclick="showPanel('att')"><div class="qa-ic">📋</div><div class="qa-lbl">Attendance</div></div>
                         <div class="qa" onclick="showPanel('contracts')"><div class="qa-ic">📄</div><div class="qa-lbl">Contracts</div></div>
-                        <div class="qa" onclick="showPanel('profiles')"><div class="qa-ic">🪪</div><div class="qa-lbl">Profiles</div></div>
+                        <div class="qa" onclick="showPanel('profile-manager')"><div class="qa-ic">👔</div><div class="qa-lbl">Add Manager Profile</div></div>
+                        <div class="qa" onclick="showPanel('profile-hr')"><div class="qa-ic">👩‍💼</div><div class="qa-lbl">Add HR Profile</div></div>
                         <div class="qa" onclick="refreshAll()"><div class="qa-ic">🔄</div><div class="qa-lbl">Refresh</div></div>
                         <div class="qa" onclick="window.open('manager.html','_blank')"><div class="qa-ic">👔</div><div class="qa-lbl">Mgr Portal</div></div>
                     </div>
@@ -1112,7 +1114,8 @@
             att:['Attendance Log','Daily attendance records'],
             proj:['Project Manager','Manage & assign projects'],
             contracts:['Contracts','Employment type & contract tracking'],
-            profiles:['Profiles','Create and manage manager, reporting manager, and HR profiles'],
+            'profile-manager':['Add Manager Profile','Create and manage manager and reporting manager profiles'],
+            'profile-hr':['Add HR Profile','Create and manage HR login profiles'],
             rpt:['Reports','Analytics & exports']
         };
 
@@ -1240,14 +1243,16 @@
         function showPanel(name){
             if(!PANEL_META[name])return;
             document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
-            const p=document.getElementById('panel-'+name);if(p)p.classList.add('on');
+            const panelId=(name==='profile-manager'||name==='profile-hr')?'profiles':name;
+            const p=document.getElementById('panel-'+panelId);if(p)p.classList.add('on');
             const[t,s]=PANEL_META[name];document.getElementById('panelTitle').textContent=t;document.getElementById('panelSub').textContent=s;
             document.querySelectorAll('.nav-item[data-panel]').forEach(n=>{n.classList.toggle('on',n.dataset.panel===name)});
             closeAllMS();
             if(name==='proj'){renderProjList();populateProjDropdowns()}
             if(name==='rpt')buildReports();
             if(name==='contracts')buildContractsPanel();
-            if(name==='profiles')showProfileView('manager');
+            if(name==='profile-manager')showProfileView('manager');
+            if(name==='profile-hr')showProfileView('hr');
         }
 
         document.addEventListener('DOMContentLoaded',()=>{
@@ -1349,7 +1354,7 @@
         }
         function showProfileAlert(id,msg,type){const cls={ok:'al-ok',err:'al-err',warn:'al-warn',info:'al-info'};const el=document.getElementById(id);if(!el)return;el.innerHTML=`<div class="alert ${cls[type]||'al-ok'}">${msg}</div>`;setTimeout(()=>{if(el)el.innerHTML=''},4000)}
         function resetManagerProfileForm(){mgrProfileEditEmail=null;document.getElementById('mgrProfileType').value='Manager';document.getElementById('mgrProfileName').value='';document.getElementById('mgrProfileEmail').value='';document.getElementById('mgrProfileEmail').disabled=false;document.getElementById('mgrProfileRole').value='';document.getElementById('mgrProfileDept').value='';document.getElementById('mgrProfileTeam').value='';document.getElementById('mgrProfileSaveBtn').innerHTML='💾 Save Profile';document.getElementById('mgrProfileCancelBtn').style.display='none'}
-        function editManagerProfile(email){const p=findManagerProfile(email);if(!p)return;mgrProfileEditEmail=(p.email||'').toLowerCase();document.getElementById('mgrProfileType').value=p.managerType||'Manager';document.getElementById('mgrProfileName').value=p.name||'';document.getElementById('mgrProfileEmail').value=p.email||'';document.getElementById('mgrProfileEmail').disabled=true;document.getElementById('mgrProfileRole').value=p.role||'';document.getElementById('mgrProfileDept').value=p.department||'';document.getElementById('mgrProfileTeam').value=p.team||'';document.getElementById('mgrProfileSaveBtn').innerHTML='💾 Update Profile';document.getElementById('mgrProfileCancelBtn').style.display='inline-flex';showPanel('profiles');showProfileView('manager')}
+        function editManagerProfile(email){const p=findManagerProfile(email);if(!p)return;mgrProfileEditEmail=(p.email||'').toLowerCase();document.getElementById('mgrProfileType').value=p.managerType||'Manager';document.getElementById('mgrProfileName').value=p.name||'';document.getElementById('mgrProfileEmail').value=p.email||'';document.getElementById('mgrProfileEmail').disabled=true;document.getElementById('mgrProfileRole').value=p.role||'';document.getElementById('mgrProfileDept').value=p.department||'';document.getElementById('mgrProfileTeam').value=p.team||'';document.getElementById('mgrProfileSaveBtn').innerHTML='💾 Update Profile';document.getElementById('mgrProfileCancelBtn').style.display='inline-flex';showPanel('profile-manager')}
         async function saveManagerProfile(){
             const email=document.getElementById('mgrProfileEmail').value.trim().toLowerCase(),name=document.getElementById('mgrProfileName').value.trim(),managerType=document.getElementById('mgrProfileType').value,role=document.getElementById('mgrProfileRole').value.trim(),department=document.getElementById('mgrProfileDept').value,team=document.getElementById('mgrProfileTeam').value.trim();
             if(!name)return showProfileAlert('managerProfileAlert','⚠️ Name is required','warn');
@@ -1367,7 +1372,7 @@
         }
         function deleteManagerProfile(email,name){document.getElementById('confT').textContent=`Delete ${name}?`;document.getElementById('confM').textContent=`Remove this manager profile?`;confCb=async()=>{const prev=[...allManagers];allManagers=allManagers.filter(m=>(m.email||'').toLowerCase()!==String(email).toLowerCase());renderManagerProfiles();CACHE.clear('getManagers');const r=await callAPI('deleteManager',{email});if(r.success){toast('🗑️ Deleted',`${name} removed`,'warn');if(mgrProfileEditEmail===String(email).toLowerCase())resetManagerProfileForm();}else{allManagers=prev;renderManagerProfiles();toast('❌ Error',r.message,'err')}};document.getElementById('confOv').classList.add('on')}
         function resetHRProfileForm(){hrProfileEditUsername=null;document.getElementById('hrProfileUsername').value='';document.getElementById('hrProfileUsername').disabled=false;document.getElementById('hrProfilePassword').value='';document.getElementById('hrProfileName').value='';document.getElementById('hrProfileEmail').value='';document.getElementById('hrProfileRole').value='';document.getElementById('hrProfileStatus').value='Active';document.getElementById('hrProfileSaveBtn').innerHTML='💾 Save HR Profile';document.getElementById('hrProfileCancelBtn').style.display='none'}
-        function editHRProfile(username){const p=allHRProfiles.find(x=>String(x.username||'').toLowerCase()===String(username).toLowerCase());if(!p)return;hrProfileEditUsername=String(p.username||'').toLowerCase();document.getElementById('hrProfileUsername').value=p.username||'';document.getElementById('hrProfileUsername').disabled=true;document.getElementById('hrProfilePassword').value=p.password||'';document.getElementById('hrProfileName').value=p.name||'';document.getElementById('hrProfileEmail').value=p.email||'';document.getElementById('hrProfileRole').value=p.role||'';document.getElementById('hrProfileStatus').value=p.status||'Active';document.getElementById('hrProfileSaveBtn').innerHTML='💾 Update HR Profile';document.getElementById('hrProfileCancelBtn').style.display='inline-flex';showPanel('profiles');showProfileView('hr')}
+        function editHRProfile(username){const p=allHRProfiles.find(x=>String(x.username||'').toLowerCase()===String(username).toLowerCase());if(!p)return;hrProfileEditUsername=String(p.username||'').toLowerCase();document.getElementById('hrProfileUsername').value=p.username||'';document.getElementById('hrProfileUsername').disabled=true;document.getElementById('hrProfilePassword').value=p.password||'';document.getElementById('hrProfileName').value=p.name||'';document.getElementById('hrProfileEmail').value=p.email||'';document.getElementById('hrProfileRole').value=p.role||'';document.getElementById('hrProfileStatus').value=p.status||'Active';document.getElementById('hrProfileSaveBtn').innerHTML='💾 Update HR Profile';document.getElementById('hrProfileCancelBtn').style.display='inline-flex';showPanel('profile-hr')}
         async function saveHRProfile(){
             const username=document.getElementById('hrProfileUsername').value.trim(),password=document.getElementById('hrProfilePassword').value.trim(),name=document.getElementById('hrProfileName').value.trim(),email=document.getElementById('hrProfileEmail').value.trim().toLowerCase(),role=document.getElementById('hrProfileRole').value.trim()||'HR Administrator',status=document.getElementById('hrProfileStatus').value;
             if(!username)return showProfileAlert('hrProfileAlert','⚠️ Username is required','warn');
