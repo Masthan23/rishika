@@ -466,7 +466,6 @@
                 <div class="hb-row"><span>📊</span><span><strong>Rep. Manager password:</strong> reporting@123</span></div>
                 <div style="margin-top:7px;font-size:.68rem;opacity:.7;line-height:1.5;">Your company email (@dashverse.ai, @dashversemail.com, or @dashtoon.com) must be entered by HR in the Manager Email or Reporting Manager Email field of each employee.</div>
             </div>
-            <a href="app.html" class="lnk" style="margin-top:6px;">← Employee Portal</a>
         </div>
     </div>
 
@@ -506,9 +505,6 @@
                 <div class="nav-item" data-panel="allleaves" onclick="showPanel('allleaves');closeSB()"><span class="n-ic">🏖️</span>All Leave History</div>
                 <div class="nav-sec">Records</div>
                 <div class="nav-item" data-panel="att" onclick="showPanel('att');closeSB()"><span class="n-ic">✅</span>Attendance Log</div>
-                <div class="nav-sec">Links</div>
-                <div class="nav-item" onclick="navigateToPortal('app.html','empOk');closeSB()"><span class="n-ic">🔗</span>Employee Portal</div>
-                <div class="nav-item" onclick="navigateToPortal('admin.html','hrOk');closeSB()"><span class="n-ic">👩‍💼</span>HR Panel</div>
             </nav>
             <div class="sb-ftr">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;">
@@ -733,7 +729,7 @@
             att: ['Team Attendance Log', 'Attendance records for your team']
         };
 
-        let currentPanel='dash', myEmail='', myName='', myRole='', selRoleTab='manager';
+        let myEmail='', myName='', myRole='', selRoleTab='manager';
         let allEmp=[], allAtt=[], allLv=[], myTeam=[], myTeamAtt=[], myTeamLv=[];
         let confCb=null, isLive=false, dataLoaded=false;
 
@@ -821,7 +817,6 @@
         }
 
         function logout(){sessionStorage.removeItem('mgrSession');clearCache();dataLoaded=false;document.getElementById('loginPg').style.display='flex';document.getElementById('mgrApp').classList.remove('on');document.getElementById('mgrEmail').value='';document.getElementById('mgrPass').value='';myEmail='';myRole='';myName='';allEmp=[];allAtt=[];allLv=[];myTeam=[];myTeamAtt=[];myTeamLv=[];checkConn();}
-        function navigateToPortal(dest,flagKey){sessionStorage.setItem(flagKey,'1');sessionStorage.setItem('fromIndexPage','1');window.location.href=dest;}
         function loginMsg(msg,type){const cls={ok:'al-ok',err:'al-err',warn:'al-warn',info:'al-info'};document.getElementById('loginAlert').innerHTML=`<div class="alert ${cls[type]}">${msg}</div>`;setTimeout(()=>{const el=document.getElementById('loginAlert');if(el)el.innerHTML=''},6000);}
         function initApp(){document.getElementById('todayDateLbl').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});updateSidebarUser();if(!dataLoaded)loadAll();}
         function updateSidebarUser(){const roleLabel=myRole==='reporting'?'📊 Reporting Manager':'👔 Manager';document.getElementById('sbAv').textContent=ini(myName);document.getElementById('sbUserName').textContent=myName;document.getElementById('sbUserEmail').textContent=myEmail;document.getElementById('sbUserRole').textContent=roleLabel;}
@@ -833,7 +828,6 @@
             document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));const p=document.getElementById('panel-'+name);if(p)p.classList.add('on');
             const[t,s]=PANEL_META[name];document.getElementById('panelTitle').textContent=t;document.getElementById('panelSub').textContent=s;
             document.querySelectorAll('.nav-item[data-panel]').forEach(n=>{n.classList.toggle('on',n.dataset.panel===name)});
-            currentPanel=name;
             if(name==='pending')renderPendingLeaves();if(name==='allleaves')renderAllLeaves();if(name==='team')renderTeam();if(name==='att')renderAtt();if(name==='today')renderTodayFull();
         }
 
