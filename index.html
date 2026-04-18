@@ -247,6 +247,8 @@
         [data-theme="dark"] .alert-warn { color:#fbbf24; }
         [data-theme="dark"] .alert-info { color:#60a5fa; }
         @keyframes slideD { from{opacity:0;transform:translateY(-9px)} to{opacity:1;transform:translateY(0)} }
+
+        /* WARNING NOTICE STYLES */
         .warning-notice {
             margin: 20px 16px 0;
             animation: warningSlideIn 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -455,6 +457,8 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+
+        /* 4K Quality Enhancements */
         @media (min-resolution: 2dppx) {
             .warning-container {
                 border-radius: 24px;
@@ -465,6 +469,8 @@
                 backdrop-filter: blur(15px);
             }
         }
+
+        /* Responsive Design for Warning Notice */
         @media (max-width: 480px) {
             .warning-notice {
                 margin: 16px 12px 0;
@@ -592,84 +598,14 @@
         .ftxt::placeholder { color:var(--muted); opacity:.7; }
         .skeleton { background:linear-gradient(90deg,rgba(102,126,234,.07) 25%,rgba(102,126,234,.14) 50%,rgba(102,126,234,.07) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:8px; }
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-        .fetching-panel { background:linear-gradient(135deg,rgba(102,126,234,.12),rgba(79,172,254,.09)); border:1px solid rgba(102,126,234,.18); border-radius:18px; padding:18px 16px; text-align:center; margin:0 0 14px; box-shadow:0 10px 30px rgba(102,126,234,.12); animation:fetchCardIn .35s ease; }
-        .fetching-orb { width:58px; height:58px; margin:0 auto 12px; border-radius:50%; background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.95),rgba(102,126,234,.25)); display:flex; align-items:center; justify-content:center; position:relative; color:var(--p); font-size:1.4rem; font-weight:900; }
-        .fetching-orb::before, .fetching-orb::after { content:''; position:absolute; inset:-7px; border-radius:50%; border:2px solid rgba(102,126,234,.18); animation:fetchPulse 1.8s ease-out infinite; }
-        .fetching-orb::after { inset:-14px; animation-delay:.55s; }
-        .fetching-title { font-size:1rem; font-weight:800; color:var(--txt); margin-bottom:5px; }
-        .fetching-sub { font-size:.82rem; color:var(--muted); line-height:1.55; max-width:260px; margin:0 auto; }
-        .fetching-dots { display:inline-flex; gap:5px; margin-top:12px; }
-        .fetching-dots span { width:7px; height:7px; border-radius:50%; background:var(--p); opacity:.28; animation:fetchDots 1.2s ease-in-out infinite; }
-        .fetching-dots span:nth-child(2) { animation-delay:.2s; }
-        .fetching-dots span:nth-child(3) { animation-delay:.4s; }
-        @keyframes fetchPulse { 0%{transform:scale(.92);opacity:.55;} 70%{transform:scale(1.12);opacity:0;} 100%{transform:scale(1.12);opacity:0;} }
-        @keyframes fetchDots { 0%,80%,100%{opacity:.28;transform:translateY(0);} 40%{opacity:1;transform:translateY(-4px);} }
-        @keyframes fetchCardIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
         .empty-state { text-align:center; padding:28px 16px; color:var(--muted); }
         .empty-state .ei { font-size:2.5rem; margin-bottom:8px; }
         .empty-state p { font-size:.85rem; }
         .ftr { text-align:center; padding:22px 16px; color:var(--muted); font-size:.76rem; border-top:1px solid var(--gb); margin-top:32px; }
-        @media(max-width:768px) { 
-            .info-grid { grid-template-columns:1fr 1fr } 
-            .frow { grid-template-columns:1fr } 
-            .main { padding:12px 12px 80px }
-            .card,.hist-card,.lv-form { padding:14px 12px; margin-bottom:10px }
-            .prof-actions-col { padding:12px 14px 14px }
-            .btn { padding:10px 14px; font-size:.8rem }
-            .finp,.fsel { font-size:16px; padding:10px 8px }
-            .sfm-item { padding:8px 12px 8px 8px }
-            table { font-size:.75rem }
-            table th,table td { padding:8px 6px }
-        }
-        @media(max-width:480px) { 
-            .main { padding:10px 8px 80px } 
-            .card,.hist-card,.lv-form { padding:12px 10px; margin-bottom:8px }
-            .prof-actions-col { padding:10px 12px 12px }
-            .info-grid { grid-template-columns:1fr }
-            .hdr-time { display:none }
-            .av { width:32px; height:32px; font-size:.7rem }
-            .btn { padding:8px 12px; font-size:.75rem }
-            .finp,.fsel { font-size:16px; padding:9px 8px; border-radius:8px }
-            .badge { padding:4px 8px; font-size:.7rem }
-            table { font-size:.7rem }
-            table th,table td { padding:6px 4px }
-            .lv-type-badge,.lv-status-badge { padding:3px 6px; font-size:.65rem }
-            .bd-ok,.bd-rej,.bd-pend,.bd-info,.bd-pur { padding:3px 6px; font-size:.65rem }
-            .sfm-item { padding:6px 10px 6px 6px; gap:8px }
-            .sfm-ic { width:32px; height:32px; font-size:.85rem }
-            .sfm-label { font-size:.75rem }
-            .sfm-sub { font-size:.6rem }
-            .card-t { font-size:.85rem; gap:6px }
-            .empty-state .ei { font-size:2rem }
-            .empty-state p { font-size:.75rem }
-        }
-        @media(max-width:380px) {
-            .main { padding:8px 6px 70px }
-            .card,.hist-card,.lv-form { padding:10px 8px }
-            .info-grid { gap:6px }
-            .btn { padding:7px 10px; font-size:.7rem }
-            .finp,.fsel { font-size:16px; padding:8px 6px }
-            .badge { padding:3px 6px; font-size:.65rem }
-            table { font-size:.65rem }
-            table th,table td { padding:4px 3px }
-            .sfm-item { padding:5px 8px 5px 5px }
-        }
+        @media(max-width:580px) { .info-grid { grid-template-columns:1fr 1fr; } .frow { grid-template-columns:1fr; } }
+        @media(max-width:420px) { .main { padding:14px 10px 80px; } .card,.hist-card,.lv-form { padding:16px 13px; } .prof-actions-col { padding:12px 16px 16px; } }
         @media(min-width:600px) { .hdr-time { display:block; } .info-grid { grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); } }
         @media(prefers-color-scheme:dark) { .fsel,.ftxt,.finp { color-scheme:dark; } }
-        @supports (display: grid) {
-            .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            table { border-collapse: collapse; width: 100%; }
-            table th { background: var(--inp-bg); position: sticky; top: 0; z-index: 1; }
-        }
-        @media (pointer: coarse) {
-            .btn, button { min-height: 44px; }
-            .finp, .fsel { min-height: 44px; }
-        }
-        @media (max-width: 480px) {
-            input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="number"], textarea, select {
-                font-size: 16px !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -759,6 +695,7 @@
     </header>
 
     <main class="main">
+        <!-- EMAIL PAGE -->
         <div class="pg on" id="pgEmail">
             <div class="hero" id="emailHero">
                 <div class="hero-img-w">
@@ -768,9 +705,13 @@
                          onerror="this.src='https://images.unsplash.com/photo-1497366216548-37526070297c?w=500&h=500&fit=crop'"/>
                 </div>
                 <h1>Mark Your<br>Attendance</h1>
-                <p>Enter your work email to fetch your profile and mark attendance</p>
+                <p>Enter your @dashverse.ai work email to fetch your profile and mark attendance</p>
                 <div class="date-badge">📅 <span id="curDate"></span></div>
             </div>
+
+            <!-- WARNING NOTICE -->
+
+
             <div class="card" id="emailCard">
                 <div id="connStatus"></div>
                 <div id="emailAlerts"></div>
@@ -783,13 +724,15 @@
                                autocomplete="email" autocapitalize="none"
                                autocorrect="off" spellcheck="false" inputmode="email"/>
                     </div>
-                    <div class="hint">💡 Allowed domains: @dashversemail.com, @dashverse.ai, @dashtoon.com</div>
+                    <div class="hint">💡 Only @dashverse.ai email addresses are accepted</div>
                 </div>
                 <button class="btn btn-p btn-fw" id="fetchBtn" onclick="fetchEmployee()">
                     🔍 Fetch My Details
                 </button>
             </div>
         </div>
+
+        <!-- DASHBOARD PAGE -->
         <div class="pg" id="pgDash">
             <div id="dashAlerts"></div>
 
@@ -803,6 +746,8 @@
                     <div class="prof-name" id="profName">—</div>
                     <div class="prof-role-txt" id="profRole">—</div>
                 </div>
+
+                <!-- PROJECT SELECTOR -->
                 <div id="projSelectInlineWrap" style="display:none;">
                     <div class="prof-divider"></div>
                     <div class="proj-area">
@@ -845,6 +790,8 @@
                     <div class="info-grid" id="infoGrid"></div>
                 </div>
             </div>
+
+            <!-- LEAVE FORM -->
             <div id="lvSec" style="display:none;">
                 <div class="lv-form">
                     <div class="sec-title">📅 Apply for Leave</div>
@@ -909,6 +856,8 @@
                     </div>
                 </div>
             </div>
+
+            <!-- TABS -->
             <div style="margin-top:20px;">
                 <div class="tabs">
                     <button class="tab on" id="tab-att" onclick="switchTab('att')">📊 Attendance</button>
@@ -952,6 +901,7 @@
 </div>
 
 <script>
+    // ===== THEME =====
     const THEME_KEY = 'atp_theme';
     let currentTheme = localStorage.getItem(THEME_KEY) || 'light';
     function applyTheme(t) {
@@ -967,10 +917,11 @@
     }
     function toggleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
     applyTheme(currentTheme);
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydBhXkGMVuhF6zoylL0nPYmDQF0HhWscyberEXj5ubulsP-_GOe3HwHTF1CaOIiaRt/exec';
+
+    // ===== CONSTANTS =====
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzk-1uzsKJRGcvqc8_CE4UGdUhIZL62Caar5ZYxpvcYV6lgchz2MfsMlMdlrJXDtMVX/exec';
     const TIMEOUT_MS = 12000;
-    const ALLOWED_DOMAINS = ['@dashversemail.com','@dashverse.ai','@dashtoon.com'];
-    const ALLOWED_DOMAINS_TEXT = ALLOWED_DOMAINS.join(', ');
+    const ALLOWED_DOMAIN = '@dashverse.ai';
     const POLICY = { YEARLY_LIMIT:18, MONTHLY_LIMIT:2, ABSENT_WARN_THRESHOLD:2 };
     const ADMIN_ONLY_FIELDS = ['employmentType','contractStartDate','contractEndDate','contractTotalDays','noticePeriod','renewalNotes'];
 
@@ -990,7 +941,7 @@
     const LS={EMP:'atp_emp',ATT:'atp_att',LV:'atp_lv',PROJ:'atp_projects'};
     const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||'[]')}catch{return[]}};
     const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
-    const isDashverseEmail=e=>{const v=(e||'').toLowerCase().trim();return ALLOWED_DOMAINS.some(d=>v.endsWith(d));};
+    const isDashverseEmail=e=>e&&e.toLowerCase().endsWith(ALLOWED_DOMAIN);
     const isValidEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
     const todayStr=()=>new Date().toISOString().split('T')[0];
     const escStr=s=>(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
@@ -1007,26 +958,35 @@
     }
     function safeParseDate(val){
         if(!val)return null;
+        // If it's already a Date object
         if(val instanceof Date && !isNaN(val.getTime()))return val;
         const s=String(val).trim();
         if(s.startsWith('1899-12-30'))return null;
+        // Try parsing as date string
         const d=new Date(s);if(!isNaN(d.getTime()))return d;
+        // Try Google Sheets serial date (number like 45305)
         const num=parseFloat(s);
         if(!isNaN(num) && num > 30000 && num < 60000){
+            // Google Sheets serial date
             const sheetsDate = new Date((num - 25569) * 86400 * 1000);
             if(!isNaN(sheetsDate.getTime()))return sheetsDate;
         }
+        // Try YYYY-MM-DD format
         const p=s.split('-');if(p.length===3){const d2=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));if(!isNaN(d2.getTime()))return d2;}
         return null;
     }
     const safeDateStr=val=>{const d=safeParseDate(val);return d?d.toISOString().split('T')[0]:'';}
     const fmtDate=val=>{const d=safeParseDate(val);if(!d)return'N/A';try{return d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}catch{return String(val)}}
+    
+    // Parse time string to 24-hour decimal format (handles both 12h and 24h formats)
     function parseTimeTo24Hour(timeStr){
         if(!timeStr)return null;
         try{
             const str=timeStr.toString().trim().toUpperCase();
+            // Try 24-hour format first (e.g., "09:30", "14:30", "22:51:10")
             const match24=str.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
             if(match24){return parseInt(match24[1],10)+parseInt(match24[2],10)/60;}
+            // Try 12-hour format (e.g., "9:30 AM", "2:30 PM")
             const match12=str.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/);
             if(match12){
                 let hours=parseInt(match12[1],10);
@@ -1044,21 +1004,28 @@
         if(action==='ping')return{success:true};
         if(action==='getEmployee'){const f=lsGet(LS.EMP).find(e=>e.email?.toLowerCase()===(data.email||'').toLowerCase());return f?{success:true,employee:stripAdminFields(f)}:{success:false,message:'Employee not found. Contact your HR admin.'};}
         if(action==='markAttendance'){
+            // Check if current time is before 3:00 PM (15:00)
             const now = new Date();
             const currentHour = now.getHours();
             const currentMinute = now.getMinutes();
             const currentTimeInMinutes = currentHour * 60 + currentMinute;
-            const cutoffTimeInMinutes = 15 * 60;
+            const cutoffTimeInMinutes = 15 * 60; // 15:00 = 3:00 PM
             
             const atts=lsGet(LS.ATT),today=todayStr();
+            
+            // Check with multiple date formats
             const userAtts = atts.filter(a => {
                 if(a.email?.toLowerCase() !== data.email?.toLowerCase()) return false;
                 const attDateStr = safeDateStr(a.date);
                 const dateStr = String(a.date || '').trim().substring(0, 10);
                 return attDateStr === today || dateStr === today;
             });
+            
+            // Check if user logged in today
             let loggedBefore15 = false;
             let loggedToday = userAtts.length > 0;
+            
+            // Check if any login was before 15:00
             for(const att of userAtts){
                 const checkInStr = att.checkIn;
                 if(checkInStr){
@@ -1069,9 +1036,14 @@
                     }
                 }
             }
+            
+            // If after 15:00 and user did not log in before 15:00, block
             if(currentTimeInMinutes >= cutoffTimeInMinutes && !loggedBefore15 && !loggedToday){
                 return{success:false,message:'Please login before 3:00pm (15:00).'};
             }
+            
+            // If user already logged in before 15:00, allow re-login
+            // If logged today, allow re-login
             
             const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
             const rec={...data,date:today,checkIn:ts,status:'Present',recordId:'ATT'+Date.now()};
@@ -1091,11 +1063,11 @@
     async function callAPI(action,data={},useCache=false){
         const cacheKey=action+'_'+(data.email||'');
         if(useCache){const c=CACHE.get(cacheKey);if(c)return c;}
-        const params=new URLSearchParams({action,_ts:String(Date.now())});
+        const params=new URLSearchParams({action});
         Object.entries(data).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')params.set(k,String(v));});
         const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),TIMEOUT_MS);
         try{
-            const res=await fetch(`${SCRIPT_URL}?${params}`,{method:'GET',signal:ctrl.signal,cache:'no-store'});
+            const res=await fetch(`${SCRIPT_URL}?${params}`,{method:'GET',signal:ctrl.signal});
             clearTimeout(timer);const txt=await res.text();
             const clean=txt.replace(/^[^{[]*/,'').replace(/[^}\]]*$/,'');
             const json=JSON.parse(clean||txt);isConnected=true;
@@ -1107,6 +1079,8 @@
 
     let emp=null,attData=[],lvData=[],marked=false,projectList=[];
     let empSelectedProjects=new Set();
+
+    // ===== FAB & PIN =====
     let fabOpen=false,currentPortal=null,pinValue='';
 
     function toggleFabMenu(){
@@ -1168,6 +1142,8 @@
             pinValue='';updatePinDots(currentPortal);
         }
     }
+
+    // ===== INIT =====
     document.addEventListener('DOMContentLoaded',()=>{
         tick();setInterval(tick,1000);
         setMinDates();
@@ -1213,11 +1189,14 @@
         if(e4)e4.textContent=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
         updateCutoffNotice();
     }
+    // Cutoff notice removed, always show email input
     function updateCutoffNotice(){}
     function setMinDates(){
         const t=todayStr();
         ['lvFrom','lvTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.min=t;});
     }
+
+    // ===== LEAVE STATS =====
     function getLeaveStats(){
         const now=new Date(),yr=now.getFullYear(),mo=now.getMonth();
         const approved=lvData.filter(l=>l.status==='Approved');
@@ -1269,6 +1248,8 @@
         else{info.style.color='var(--p)';}
         info.textContent=msg;info.style.display='block';
     }
+
+    // ===== MULTISELECT =====
     function toggleEmpMS(){
         const trigger=document.getElementById('empProjTrigger');
         const dropdown=document.getElementById('empProjDropdown');
@@ -1337,11 +1318,13 @@
             if(notice)notice.style.display='block';
         }
     }
+
+    // ===== FETCH EMPLOYEE =====
     async function fetchEmployee(){
         const email=document.getElementById('emailInp').value.trim();
         if(!email){showAlert('emailAlerts','⚠️ Please enter your email address','warn');shake();return;}
         if(!isValidEmail(email)){showAlert('emailAlerts','⚠️ Invalid email format','err');shake();return;}
-        if(!isDashverseEmail(email)){showAlert('emailAlerts',`⚠️ Allowed domains: ${ALLOWED_DOMAINS_TEXT}`,'err');shake();return;}
+        if(!isDashverseEmail(email)){showAlert('emailAlerts','⚠️ Only @dashverse.ai email addresses are accepted.','err');shake();return;}
         const btn=document.getElementById('fetchBtn');
         setLoad(btn,true);clrAlert('emailAlerts');showSkeletonDash();
         if(!projectList.length)await loadProjectsBackground();
@@ -1375,19 +1358,16 @@
     function showSkeletonDash(){
         document.getElementById('pgEmail').classList.remove('on');
         document.getElementById('pgDash').classList.add('on');
-        document.getElementById('profAv').innerHTML=`<div class="fetching-orb">📡</div>`;
-        document.getElementById('profName').innerHTML=`<div class="fetching-title">Getting your details...</div>`;
-        document.getElementById('profRole').innerHTML=`<div class="fetching-sub">We are securely fetching your profile, attendance, and leave information.</div><div class="fetching-dots"><span></span><span></span><span></span></div>`;
-        document.getElementById('infoGrid').innerHTML=`<div class="fetching-panel" style="grid-column:1/-1;">
-            <div class="fetching-title">Loading your employee profile</div>
-            <div class="fetching-sub">This usually takes just a moment. Thanks for waiting.</div>
-        </div>` + Array(6).fill(0).map(()=>
+        document.getElementById('profAv').textContent='...';
+        document.getElementById('profName').innerHTML=`<div class="skeleton" style="height:22px;width:160px;margin:0 auto;"></div>`;
+        document.getElementById('profRole').innerHTML=`<div class="skeleton" style="height:14px;width:120px;margin:5px auto 0;"></div>`;
+        document.getElementById('infoGrid').innerHTML=Array(6).fill(0).map(()=>
             `<div class="info-item">
                 <div class="skeleton" style="height:10px;width:60%;margin-bottom:6px;"></div>
                 <div class="skeleton" style="height:15px;width:80%;"></div>
             </div>`
         ).join('');
-        document.getElementById('todaySts').innerHTML=`<div class="sts-badge" style="background:rgba(102,126,234,.12);color:var(--p);border:1px solid rgba(102,126,234,.22);"><div class="sts-dot" style="background:var(--p);animation:fetchDots 1.2s ease-in-out infinite;"></div>Fetching profile</div>`;
+        document.getElementById('todaySts').innerHTML=`<div class="skeleton" style="width:90px;height:26px;border-radius:50px;margin:0 auto;"></div>`;
     }
 
     function buildDashboard(){
@@ -1416,8 +1396,10 @@
 
     function checkTodayMark(list){
         const today=todayStr();
+        // Try multiple date formats to find today's attendance
         let rec = list.find(a => safeDateStr(a.date) === today);
         if(!rec){
+            // Try matching date string directly (in case it's already in yyyy-mm-dd format)
             rec = list.find(a => {
                 const dateVal = a.date;
                 if(!dateVal) return false;
@@ -1426,6 +1408,7 @@
             });
         }
         if(!rec){
+            // Try matching with Date object
             const todayDate = new Date();
             todayDate.setHours(0,0,0,0);
             rec = list.find(a => {
@@ -1456,14 +1439,19 @@
 
     async function markAttendance(){
         if(marked){toast('ℹ️ Already Marked','Attendance already recorded today','warn');return;}
+        
+        // Check if current time is before 3:00 PM (15:00)
         const now = new Date();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
         const currentTimeInMinutes = currentHour * 60 + currentMinute;
-        const cutoffTimeInMinutes = 15 * 60;
+        const cutoffTimeInMinutes = 15 * 60; // 15:00 = 3:00 PM
+        
+        // Check if user logged in before 15:00
         let loggedBefore15 = false;
         const today = todayStr();
         for(const att of attData){
+            // Try multiple date formats
             const attDateStr = safeDateStr(att.date);
             const dateStr = String(att.date || '').trim().substring(0, 10);
             if(attDateStr === today || dateStr === today){
@@ -1474,11 +1462,15 @@
                 }
             }
         }
+        
+        // If after 15:00 and user did not log in before 15:00, block
         if(currentTimeInMinutes >= cutoffTimeInMinutes && !loggedBefore15){
             showAlert('dashAlerts','⏰ Please login before 3:00pm (15:00).','warn');
             toast('⏰ Time Limit Exceeded','Please login before 3:00pm (15:00)','warn');
             return;
         }
+        
+        // If user logged in before 15:00, allow re-login
         
         const selectedProj=[...empSelectedProjects].join(', ');
         if(projectList.length>0&&empSelectedProjects.size===0){
