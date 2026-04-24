@@ -1,9 +1,8 @@
-
-const SHEET_ID = '1Vtb5IuClsUs9TPVrM_Gc3CkopvtIXbrDZYM7OzCWxko';
+const SHEET_ID = '1oqAhb_f0aEKIeF3jgtOdT7Hhu2sO4RTa9To4TJRBVXs';
 
 const EMPLOYEE_HEADERS = [
   'EmpID', 'Email', 'Name', 'Role', 'Department',
-  'EmploymentType', 'WorkMode',
+  'EmploymentType', 'WorkMode', 'Status',
   'ReportingManager', 'ReportingManagerEmail',
   'Manager', 'ManagerEmail',
   'Phone', 'JoinDate',
@@ -12,12 +11,31 @@ const EMPLOYEE_HEADERS = [
   'CurrentProject', 'AddedOn'
 ];
 
+const ATTENDANCE_HEADERS = [
+  'RecordID', 'EmpID', 'Email', 'Name', 'Department',
+  'CurrentProject', 'Date', 'CheckInTime', 'Location', 'Status', 'AttendanceColor'
+];
+
+const ABSENCE_HEADERS = [
+  'Date', 'Employee ID', 'Email', 'Name', 'Department', 'Role',
+  'Reporting Manager', 'Manager', 'Project', 'Work Mode',
+  'Employment Type', 'Status'
+];
+
 const MANAGER_HEADERS = [
-  'ManagerID', 'ManagerType', 'Name', 'Email', 'Role', 'Department', 'Team', 'AddedOn'
+  'ManagerID', 'ManagerType', 'Name', 'Email', 'Role', 'Department', 'AddedOn'
 ];
 
 const HR_PROFILE_HEADERS = [
   'HRID', 'Username', 'Password', 'Name', 'Email', 'Role', 'Status', 'AddedOn'
+];
+
+const LEAVE_HEADERS = [
+  'LeaveID', 'EmpID', 'Email', 'Name', 'Department',
+  'LeaveType', 'FromDate', 'ToDate', 'Days', 'Reason',
+  'Status', 'AppliedOn', 'UpdatedOn', 'ApprovedBy', 'ApprovedDate',
+  'RejectedBy', 'RejectedDate', 'RejectionReason',
+  'ReportingManager', 'ReportingManagerEmail', 'Manager', 'ManagerEmail'
 ];
 
 function doGet(e) {
@@ -66,6 +84,7 @@ function jsonResponse(obj) {
 function handleAction(action, data) {
   switch (action) {
     case 'ping':              return { success: true, message: 'pong' };
+    case 'testEmail':         return testEmailSystem(data);
     case 'setup':             return setupSheets();
     case 'adminLogin':        return adminLogin(data);
     case 'getHRProfiles':     return getHRProfiles();
@@ -77,7 +96,8 @@ function handleAction(action, data) {
     case 'addEmployee':       return addEmployee(data);
     case 'updateEmployee':    return updateEmployee(data);
     case 'deleteEmployee':    return deleteEmployee(data.email);
-    case 'markAttendance':    return markAttendance(data);
+    case 'markAttendance':    return handleMarkAttendance(data);
+    case 'recordAbsent':      return handleRecordAbsent(data);
     case 'checkLoginBeforeCutoff': return checkLoginBeforeCutoff(data);
     case 'captureAbsentUsers': return captureAbsentUsers(data);
     case 'getAttendance':     return getAttendance(data.email);
@@ -89,8 +109,11 @@ function handleAction(action, data) {
     case 'getProjects':       return getProjects();
     case 'saveProjects':      return saveProjects(data);
     case 'assignProject':     return assignProject(data);
+    case 'getEmployeesByProject': return getEmployeesByProject(data);
     case 'getManagers':       return getManagers();
     case 'validateManagerProfile': return validateManagerProfile(data.email, data.role);
+    case 'validateProductivityTrackerProfile':
+    case 'validateProductionManagerProfile': return validateProductivityTrackerProfile(data.email);
     case 'debugManagerProfile': return debugManagerProfile(data.email);
     case 'addManager':        return addManager(data);
     case 'updateManager':     return updateManager(data);
@@ -104,19 +127,12 @@ function setupSheets() {
 
   const configs = {
     'Employees': EMPLOYEE_HEADERS,
-    'Attendance': [
-      'RecordID', 'EmpID', 'Email', 'Name', 'Department',
-      'CurrentProject', 'Date', 'CheckInTime', 'Location', 'Status'
-    ],
-    'Leaves': [
-      'LeaveID', 'EmpID', 'Email', 'Name', 'Department',
-      'LeaveType', 'FromDate', 'ToDate', 'Days', 'Reason',
-      'Status', 'AppliedOn', 'UpdatedOn', 'ApprovedBy', 'ApprovedDate',
-      'RejectedBy', 'RejectedDate', 'RejectionReason'
-    ],
+    'Attendance': ATTENDANCE_HEADERS,
+    'Leaves': LEAVE_HEADERS,
     'Projects': ['ProjectName'],
     'Managers': MANAGER_HEADERS,
     'HRProfiles': HR_PROFILE_HEADERS,
+    'Absences': ABSENCE_HEADERS,
     'AbsentUsers': [
       'Date', 'EmpID', 'Email', 'Name', 'Department',
       'Status', 'RecordedOn'
@@ -135,6 +151,10 @@ function setupSheets() {
   }
 
   ensureEmployeeSchema(ss);
+  ensureAttendanceSchema(ss);
+  ensureManagerSchema(ss);
+  ensureLeaveSchema(ss);
+  ensureAbsenceSchema(ss);
   return { success: true, message: 'All sheets ready!' };
 }
 
@@ -175,6 +195,136 @@ function ensureEmployeeSchema(ss) {
   });
 }
 
+function ensureManagerSchema(ss) {
+  const sheet = ss.getSheetByName('Managers');
+  if (!sheet) return;
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(MANAGER_HEADERS);
+    styleHeaderRow(sheet, MANAGER_HEADERS.length);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const existingMap = {};
+  existingHeaders.forEach(function(h, i) {
+    if (h) existingMap[h.toString().toLowerCase().trim()] = i + 1;
+  });
+
+  MANAGER_HEADERS.forEach(function(header) {
+    const key = header.toLowerCase().trim();
+    if (!Object.prototype.hasOwnProperty.call(existingMap, key)) {
+      const col = sheet.getLastColumn() + 1;
+      sheet.getRange(1, col).setValue(header);
+      sheet.getRange(1, col)
+        .setBackground('#1a1a2e')
+        .setFontColor('#ffffff')
+        .setFontWeight('bold');
+    }
+  });
+}
+
+function ensureLeaveSchema(ss) {
+  const sheet = ss.getSheetByName('Leaves');
+  if (!sheet) return;
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(LEAVE_HEADERS);
+    styleHeaderRow(sheet, LEAVE_HEADERS.length);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const existingMap = {};
+  existingHeaders.forEach(function(h, i) {
+    if (h) existingMap[h.toString().toLowerCase().trim()] = i + 1;
+  });
+
+  LEAVE_HEADERS.forEach(function(header) {
+    const key = header.toLowerCase().trim();
+    if (!Object.prototype.hasOwnProperty.call(existingMap, key)) {
+      const col = sheet.getLastColumn() + 1;
+      sheet.getRange(1, col).setValue(header);
+      sheet.getRange(1, col)
+        .setBackground('#1a1a2e')
+        .setFontColor('#ffffff')
+        .setFontWeight('bold');
+    }
+  });
+}
+
+function ensureAttendanceSchema(ss) {
+  const sheet = ss.getSheetByName('Attendance');
+  if (!sheet) return;
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(ATTENDANCE_HEADERS);
+    styleHeaderRow(sheet, ATTENDANCE_HEADERS.length);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const existingMap = {};
+  existingHeaders.forEach(function(h, i) {
+    if (h) existingMap[h.toString().toLowerCase().trim()] = i + 1;
+  });
+
+  ATTENDANCE_HEADERS.forEach(function(header) {
+    const key = header.toLowerCase().trim();
+    if (!Object.prototype.hasOwnProperty.call(existingMap, key)) {
+      const col = sheet.getLastColumn() + 1;
+      sheet.getRange(1, col).setValue(header);
+      sheet.getRange(1, col)
+        .setBackground('#1a1a2e')
+        .setFontColor('#ffffff')
+        .setFontWeight('bold');
+    }
+  });
+}
+
+function ensureAbsenceSchema(ss) {
+  let sheet = ss.getSheetByName('Absences');
+  if (!sheet) {
+    sheet = ss.insertSheet('Absences');
+  }
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(ABSENCE_HEADERS);
+    sheet.getRange(1, 1, 1, ABSENCE_HEADERS.length)
+      .setBackground('#6c757d')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const existingMap = {};
+  existingHeaders.forEach(function(h, i) {
+    if (h) existingMap[h.toString().toLowerCase().trim()] = i + 1;
+  });
+
+  ABSENCE_HEADERS.forEach(function(header) {
+    const key = header.toLowerCase().trim();
+    if (!Object.prototype.hasOwnProperty.call(existingMap, key)) {
+      const col = sheet.getLastColumn() + 1;
+      sheet.getRange(1, col).setValue(header);
+      sheet.getRange(1, col)
+        .setBackground('#6c757d')
+        .setFontColor('#ffffff')
+        .setFontWeight('bold');
+    }
+  });
+
+  sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), ABSENCE_HEADERS.length))
+    .setBackground('#6c757d')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold');
+}
+
 function adminLogin(data) {
   const username = (data.username || '').toString().trim();
   const password = (data.password || '').toString();
@@ -186,7 +336,11 @@ function adminLogin(data) {
   const matchedDefault = defaultCreds.some(function(c) {
     return c.username === username && c.password === password;
   });
-  if (matchedDefault) return { success: true, message: 'Login successful' };
+  if (matchedDefault) return {
+    success: true,
+    message: 'Login successful',
+    profile: { username: username, name: username === 'hr' ? 'HR Administrator' : 'Admin', role: 'HR Administrator' }
+  };
 
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let sheet = ss.getSheetByName('HRProfiles');
@@ -207,7 +361,16 @@ function adminLogin(data) {
     const rowStatus = (getValueByHeader(rows[i], hdr, 'status', 6) || 'Active').toString().trim().toLowerCase();
     if (rowUser === targetUser && rowPass === password) {
       if (rowStatus && rowStatus !== 'active') return { success: false, message: 'This HR profile is inactive' };
-      return { success: true, message: 'Login successful' };
+      return {
+        success: true,
+        message: 'Login successful',
+        profile: {
+          username: getValueByHeader(rows[i], hdr, 'username', 1) || username,
+          name: getValueByHeader(rows[i], hdr, 'name', 3) || username,
+          email: getValueByHeader(rows[i], hdr, 'email', 4) || '',
+          role: getValueByHeader(rows[i], hdr, 'role', 5) || 'HR Administrator'
+        }
+      };
     }
   }
 
@@ -263,6 +426,8 @@ function normalizeEmail(email) {
   return (email || '').toString().trim().toLowerCase();
 }
 
+const PRODUCTIVITY_TRACKER_LABEL = 'Productivity Tracker';
+const LEGACY_PRODUCTIVITY_TRACKER_LABEL = 'Production Manager';
 const ALLOWED_EMAIL_DOMAINS = ['@dashversemail.com', '@dashverse.ai', '@dashtoon.com'];
 function isAllowedWorkEmail(email) {
   const value = normalizeEmail(email);
@@ -271,6 +436,23 @@ function isAllowedWorkEmail(email) {
     if (value.endsWith(ALLOWED_EMAIL_DOMAINS[i])) return true;
   }
   return false;
+}
+
+function isProductivityTrackerLabel(value) {
+  const normalized = (value || '').toString().trim().toLowerCase();
+  return normalized === PRODUCTIVITY_TRACKER_LABEL.toLowerCase() ||
+    normalized === LEGACY_PRODUCTIVITY_TRACKER_LABEL.toLowerCase();
+}
+
+function hasProductivityTrackerRole(value) {
+  const normalized = (value || '').toString().trim().toLowerCase();
+  return normalized.indexOf(PRODUCTIVITY_TRACKER_LABEL.toLowerCase()) !== -1 ||
+    normalized.indexOf(LEGACY_PRODUCTIVITY_TRACKER_LABEL.toLowerCase()) !== -1;
+}
+
+function normalizeProductivityTrackerLabel(value) {
+  const trimmed = (value || '').toString().trim();
+  return isProductivityTrackerLabel(trimmed) ? PRODUCTIVITY_TRACKER_LABEL : trimmed;
 }
 
 function normalizeLeaveStatus(status) {
@@ -340,21 +522,91 @@ function setCellIfProvided(sheet, rowNumber, hdr, headerName, value) {
   }
 }
 
+function applyEmployeeStatusCellStyle(sheet, rowNumber, hdr, status) {
+  const index = hdr['status'];
+  if (index === undefined) return;
+
+  const cell = sheet.getRange(rowNumber, index + 1);
+  const normalized = (status || 'Active').toString().trim().toLowerCase();
+  cell.setBackground('#ffffff').setFontColor('#000000').setFontWeight('normal');
+
+  if (normalized === 'active') {
+    cell.setBackground('#d4edda').setFontColor('#155724').setFontWeight('bold');
+  } else if (normalized === 'inactive') {
+    cell.setBackground('#fff3cd').setFontColor('#856404').setFontWeight('bold');
+  } else if (normalized === 'rejected') {
+    cell.setBackground('#f8d7da').setFontColor('#721c24').setFontWeight('bold');
+  }
+}
+
+function getAttendanceColorInfo(dateValue) {
+  const checkInDate = dateValue instanceof Date && !isNaN(dateValue.getTime()) ? dateValue : new Date();
+  const hour = checkInDate.getHours();
+  if (hour < 14) {
+    return {
+      attendanceColor: 'green',
+      rowBackground: '#d4edda',
+      timeBackground: '#28a745',
+      timeFontColor: '#ffffff'
+    };
+  }
+  if (hour < 17) {
+    return {
+      attendanceColor: 'yellow',
+      rowBackground: '#fff3cd',
+      timeBackground: '#ffc107',
+      timeFontColor: '#000000'
+    };
+  }
+  return {
+    attendanceColor: 'red',
+    rowBackground: '#f8d7da',
+    timeBackground: '#dc3545',
+    timeFontColor: '#ffffff'
+  };
+}
+
+function getAttendanceColorFromRecordedValue(attendanceColor, checkInValue) {
+  const normalized = (attendanceColor || '').toString().trim().toLowerCase();
+  if (normalized === 'green' || normalized === 'yellow' || normalized === 'red') {
+    return normalized;
+  }
+
+  const hour = parseTimeTo24Hour(checkInValue);
+  if (hour === null) return 'green';
+  if (hour < 14) return 'green';
+  if (hour < 17) return 'yellow';
+  return 'red';
+}
+
+function applyAttendanceRowStyle(sheet, rowNumber, columnCount, colorInfo, timeColumnIndex) {
+  if (!sheet || !colorInfo) return;
+  sheet.getRange(rowNumber, 1, 1, columnCount).setBackground(colorInfo.rowBackground);
+  if (timeColumnIndex !== undefined && timeColumnIndex !== -1) {
+    sheet.getRange(rowNumber, timeColumnIndex + 1)
+      .setBackground(colorInfo.timeBackground)
+      .setFontColor(colorInfo.timeFontColor)
+      .setFontWeight('bold');
+  }
+}
+
 function buildEmployeeObject(row, hdr) {
   const employmentType = getValueByHeader(row, hdr, 'employmenttype', -1) ||
     getValueByHeader(row, hdr, 'type', -1) ||
     'Permanent';
+  const role = normalizeProductivityTrackerLabel(row[hdr['role']] || '');
 
   return {
     id: row[hdr['empid']] || '',
     email: row[hdr['email']] || '',
     name: row[hdr['name']] || '',
-    role: row[hdr['role']] || '',
+    role: role,
     department: row[hdr['department']] || '',
     employmentType: employmentType,
     employeeType: employmentType,
     employment_type: employmentType,
     workMode: getValueByHeader(row, hdr, 'workmode', -1),
+    status: getValueByHeader(row, hdr, 'status', -1) || 'Active',
     reportingManager: getValueByHeader(row, hdr, 'reportingmanager', 5),
     reportingManagerEmail: getValueByHeader(row, hdr, 'reportingmanageremail', -1),
     manager: getValueByHeader(row, hdr, 'manager', 6),
@@ -371,15 +623,16 @@ function buildEmployeeObject(row, hdr) {
 }
 
 function buildManagerObject(row, hdr) {
+  const managerType = normalizeProductivityTrackerLabel(getValueByHeader(row, hdr, 'managertype', 1));
+  const role = normalizeProductivityTrackerLabel(getValueByHeader(row, hdr, 'role', 4));
   return {
     id: getValueByHeader(row, hdr, 'managerid', 0),
-    managerType: getValueByHeader(row, hdr, 'managertype', 1),
+    managerType: managerType,
     name: getValueByHeader(row, hdr, 'name', 2),
     email: getValueByHeader(row, hdr, 'email', 3),
-    role: getValueByHeader(row, hdr, 'role', 4),
+    role: role,
     department: getValueByHeader(row, hdr, 'department', 5),
-    team: getValueByHeader(row, hdr, 'team', 6),
-    addedOn: getValueByHeader(row, hdr, 'addedon', 7)
+    addedOn: getValueByHeader(row, hdr, 'addedon', 6)
   };
 }
 
@@ -415,8 +668,51 @@ function buildLeaveObject(row, hdr) {
     approvedDate: formatSheetDate(getValueByHeader(row, hdr, 'approveddate', 14)),
     rejectedBy: getValueByHeader(row, hdr, 'rejectedby', 15),
     rejectedDate: formatSheetDate(getValueByHeader(row, hdr, 'rejecteddate', 16)),
-    rejectionReason: getValueByHeader(row, hdr, 'rejectionreason', 17)
+    rejectionReason: getValueByHeader(row, hdr, 'rejectionreason', 17),
+    reportingManager: getValueByHeader(row, hdr, 'reportingmanager', -1),
+    reportingManagerEmail: getValueByHeader(row, hdr, 'reportingmanageremail', -1),
+    manager: getValueByHeader(row, hdr, 'manager', -1),
+    managerEmail: getValueByHeader(row, hdr, 'manageremail', -1)
   };
+}
+
+function attachEmployeeManagersToLeave(leave, employee) {
+  if (!leave || !employee) return leave;
+  if (!leave.reportingManager) leave.reportingManager = employee.reportingManager || '';
+  if (!leave.reportingManagerEmail) leave.reportingManagerEmail = employee.reportingManagerEmail || '';
+  if (!leave.manager) leave.manager = employee.manager || '';
+  if (!leave.managerEmail) leave.managerEmail = employee.managerEmail || '';
+  return leave;
+}
+
+function getEmployeeForLeaveNotification(leaveRecord) {
+  const leaveEmail = normalizeEmail(leaveRecord ? leaveRecord.email : '');
+  let employee = null;
+  if (leaveEmail) {
+    try {
+      const employeeData = getEmployee(leaveEmail);
+      if (employeeData.success && employeeData.employee) {
+        employee = employeeData.employee;
+      }
+    } catch (lookupErr) {
+      Logger.log('Employee lookup failed for leave status email: ' + lookupErr.toString());
+    }
+  }
+
+  if (!employee) {
+    employee = {
+      email: leaveEmail,
+      name: leaveRecord ? leaveRecord.name : '',
+      department: leaveRecord ? leaveRecord.department : '',
+      manager: leaveRecord ? leaveRecord.manager : '',
+      managerEmail: leaveRecord ? leaveRecord.managerEmail : '',
+      reportingManager: leaveRecord ? leaveRecord.reportingManager : '',
+      reportingManagerEmail: leaveRecord ? leaveRecord.reportingManagerEmail : ''
+    };
+  } else {
+    attachEmployeeManagersToLeave(leaveRecord, employee);
+  }
+  return employee;
 }
 
 function buildAttendanceObject(row, hdr) {
@@ -448,7 +744,8 @@ function buildAttendanceObject(row, hdr) {
     date: formatSheetDate(getValueByHeader(row, hdr, 'date', 6)),
     checkIn: checkInStr,
     location: getValueByHeader(row, hdr, 'location', 8),
-    status: getValueByHeader(row, hdr, 'status', 9)
+    status: getValueByHeader(row, hdr, 'status', 9),
+    attendanceColor: getValueByHeader(row, hdr, 'attendancecolor', -1)
   };
 }
 
@@ -556,6 +853,7 @@ function addEmployee(data) {
       newRow[hdr['employmenttype']] = data.employmentType || data.employeeType || data.employment_type || data.type || 'Permanent';
     }
     if (hdr['workmode'] !== undefined) newRow[hdr['workmode']] = data.workMode || '';
+    if (hdr['status'] !== undefined) newRow[hdr['status']] = data.status || 'Active';
     if (hdr['reportingmanager'] !== undefined) newRow[hdr['reportingmanager']] = data.reportingManager || '';
     if (hdr['reportingmanageremail'] !== undefined) newRow[hdr['reportingmanageremail']] = reportingManagerEmail || '';
     if (hdr['manager'] !== undefined) newRow[hdr['manager']] = data.manager || '';
@@ -570,6 +868,7 @@ function addEmployee(data) {
     if (hdr['currentproject'] !== undefined) newRow[hdr['currentproject']] = data.currentProject || '';
     if (hdr['addedon'] !== undefined) newRow[hdr['addedon']] = now;
     sheet.appendRow(newRow);
+    applyEmployeeStatusCellStyle(sheet, sheet.getLastRow(), hdr, data.status || 'Active');
     SpreadsheetApp.flush();
     
     Logger.log('Employee added successfully: ' + empId + ' - ' + email);
@@ -627,6 +926,7 @@ function updateEmployee(data) {
           setCellIfProvided(sheet, r, hdr, 'employmenttype', data.employmentType || data.employeeType || data.employment_type || data.type || 'Permanent');
         }
         if (hasField(data, 'workMode'))             setCellIfProvided(sheet, r, hdr, 'workmode', data.workMode);
+        if (hasField(data, 'status'))               setCellIfProvided(sheet, r, hdr, 'status', data.status || 'Active');
         if (hasField(data, 'reportingManager'))     setCellIfProvided(sheet, r, hdr, 'reportingmanager', data.reportingManager);
         if (hasField(data, 'reportingManagerEmail'))setCellIfProvided(sheet, r, hdr, 'reportingmanageremail', reportingManagerEmail);
         if (hasField(data, 'manager'))              setCellIfProvided(sheet, r, hdr, 'manager', data.manager);
@@ -639,6 +939,7 @@ function updateEmployee(data) {
         if (hasField(data, 'noticePeriod'))         setCellIfProvided(sheet, r, hdr, 'noticeperiod', data.noticePeriod);
         if (hasField(data, 'renewalNotes'))         setCellIfProvided(sheet, r, hdr, 'renewalnotes', data.renewalNotes);
         if (hasField(data, 'currentProject'))       setCellIfProvided(sheet, r, hdr, 'currentproject', data.currentProject);
+        if (hasField(data, 'status'))               applyEmployeeStatusCellStyle(sheet, r, hdr, data.status || 'Active');
         SpreadsheetApp.flush();
 
         Logger.log('Employee updated successfully: ' + data.email);
@@ -690,6 +991,8 @@ function getManagers() {
     sheet = ss.getSheetByName('Managers');
   }
 
+  ensureManagerSchema(ss);
+
   if (!sheet || sheet.getLastRow() < 2) return { success: true, managers: [] };
 
   const lastRow = sheet.getLastRow();
@@ -715,6 +1018,8 @@ function debugManagerProfile(email) {
     setupSheets();
     sheet = ss.getSheetByName('Managers');
   }
+
+  ensureManagerSchema(ss);
   
   const hdr = getManagerHeaders(sheet);
   const lastRow = sheet.getLastRow();
@@ -757,6 +1062,8 @@ function validateManagerProfile(email, role) {
     setupSheets();
     sheet = ss.getSheetByName('Managers');
   }
+
+  ensureManagerSchema(ss);
   
   if (!sheet || sheet.getLastRow() < 2) {
     return { success: false, message: 'Manager profile not found. Please contact HR.' };
@@ -794,6 +1101,220 @@ function validateManagerProfile(email, role) {
   return { success: false, message: 'Your profile is not registered as a manager. Please contact HR.' };
 }
 
+function validateProductivityTrackerProfile(email) {
+  if (!email) return { success: false, message: 'Email is required' };
+
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return { success: false, message: 'Invalid email format' };
+
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName('Managers');
+  if (!sheet) {
+    setupSheets();
+    sheet = ss.getSheetByName('Managers');
+  }
+  ensureManagerSchema(ss);
+
+  let matchedNonTrackerProfile = null;
+  if (sheet && sheet.getLastRow() >= 2) {
+    const hdr = getManagerHeaders(sheet);
+    const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
+
+    for (let i = 0; i < rows.length; i++) {
+      const rowEmail = normalizeEmail(getValueByHeader(rows[i], hdr, 'email', 3));
+      if (rowEmail !== normalizedEmail) continue;
+
+      const managerType = (getValueByHeader(rows[i], hdr, 'managertype', 1) || '').toString().trim().toLowerCase();
+      const roleVal = (getValueByHeader(rows[i], hdr, 'role', 4) || '').toString().trim().toLowerCase();
+      const nameVal = (getValueByHeader(rows[i], hdr, 'name', 2) || '').toString().trim();
+      const isProductivityTracker =
+        isProductivityTrackerLabel(managerType) ||
+        ((managerType === 'manager' || !managerType) && hasProductivityTrackerRole(roleVal));
+
+      if (!isProductivityTracker) {
+        matchedNonTrackerProfile = buildManagerObject(rows[i], hdr);
+        continue;
+      }
+
+      return {
+        success: true,
+        message: 'Profile validated',
+        manager: buildManagerObject(rows[i], hdr),
+        name: nameVal || (normalizedEmail.split('@')[0] || '')
+      };
+    }
+  }
+
+  const employeeProfile = findProductivityTrackerEmployeeProfile(ss, normalizedEmail);
+  if (employeeProfile) {
+    return {
+      success: true,
+      message: 'Profile validated',
+      manager: {
+        id: employeeProfile.id || '',
+        managerType: PRODUCTIVITY_TRACKER_LABEL,
+        name: employeeProfile.name || '',
+        email: employeeProfile.email || normalizedEmail,
+        role: normalizeProductivityTrackerLabel(employeeProfile.role) || PRODUCTIVITY_TRACKER_LABEL,
+        department: employeeProfile.department || '',
+        addedOn: ''
+      },
+      name: employeeProfile.name || (normalizedEmail.split('@')[0] || '')
+    };
+  }
+
+  if (matchedNonTrackerProfile) {
+    return { success: false, message: 'Your backend profile is not registered as a Productivity Tracker. Please contact HR.' };
+  }
+
+  return { success: false, message: 'Productivity Tracker profile not found. Please contact HR.' };
+}
+
+function findProductivityTrackerEmployeeProfile(ss, email) {
+  ensureEmployeeSchema(ss);
+  const sheet = ss.getSheetByName('Employees');
+  if (!sheet || sheet.getLastRow() < 2) return null;
+
+  const hdr = getEmpHeaders(sheet);
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    const rowEmail = normalizeEmail(getValueByHeader(rows[i], hdr, 'email', 1));
+    if (rowEmail !== email) continue;
+
+    const roleVal = (getValueByHeader(rows[i], hdr, 'role', 3) || '').toString().trim().toLowerCase();
+    if (hasProductivityTrackerRole(roleVal)) {
+      return buildEmployeeObject(rows[i], hdr);
+    }
+  }
+  return null;
+}
+
+function normalizeProjectName(name) {
+  return (name || '').toString().trim().toLowerCase();
+}
+
+function splitProjects(value) {
+  if (!value) return [];
+  return value
+    .toString()
+    .split(',')
+    .map(function(p) { return p.trim(); })
+    .filter(Boolean);
+}
+
+function getEmployeesByProject(data) {
+  const project = (data.project || data.projectName || '').toString().trim();
+  if (!project) return { success: false, message: 'Project is required' };
+
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  ensureEmployeeSchema(ss);
+
+  const empSheet = ss.getSheetByName('Employees');
+  const attSheet = ss.getSheetByName('Attendance');
+  if (!empSheet) return { success: false, message: 'Employees sheet not found' };
+  if (!attSheet) return { success: true, project: project, employees: [] };
+
+  const tz = Session.getScriptTimeZone();
+  const today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  const timeFilter = (data.timeFilter || 'all').toString().trim().toLowerCase();
+
+  const pKey = normalizeProjectName(project);
+
+  // Build employee index by email
+  const empHdr = getEmpHeaders(empSheet);
+  const empRows = empSheet.getLastRow() > 1
+    ? empSheet.getRange(2, 1, empSheet.getLastRow() - 1, empSheet.getLastColumn()).getValues()
+    : [];
+  const empByEmail = {};
+  for (let i = 0; i < empRows.length; i++) {
+    const rowEmail = normalizeEmail(getValueByHeader(empRows[i], empHdr, 'email', 1));
+    if (!rowEmail) continue;
+    empByEmail[rowEmail] = buildEmployeeObject(empRows[i], empHdr);
+  }
+
+  // Scan attendance logs for employees who selected this project
+  const aHdr = getAttHeaders(attSheet);
+  const attRows = attSheet.getLastRow() > 1
+    ? attSheet.getRange(2, 1, attSheet.getLastRow() - 1, attSheet.getLastColumn()).getValues()
+    : [];
+
+  const iMail = aHdr['email'] !== undefined ? aHdr['email'] : 2;
+  const iName = aHdr['name'] !== undefined ? aHdr['name'] : 3;
+  const iDept = aHdr['department'] !== undefined ? aHdr['department'] : 4;
+  const iProj = aHdr['currentproject'] !== undefined ? aHdr['currentproject'] : 5;
+  const iDate = aHdr['date'] !== undefined ? aHdr['date'] : 6;
+  const iTime = aHdr['checkintime'] !== undefined ? aHdr['checkintime'] : 7;
+
+  // latestByEmail[email] = { date, time, dateTimeKey }
+  const latestByEmail = {};
+  for (let r = 0; r < attRows.length; r++) {
+    const email = normalizeEmail(attRows[r][iMail]);
+    if (!email) continue;
+
+    const projRaw = iProj !== -1 ? attRows[r][iProj] : '';
+    const projects = splitProjects(projRaw).map(normalizeProjectName);
+    if (projects.indexOf(pKey) === -1) continue;
+
+    const dateStr = formatSheetDate(attRows[r][iDate]) || '';
+    if (timeFilter === 'today' && dateStr !== today) continue;
+    const timeStr = (attRows[r][iTime] || '').toString().trim();
+    const dateTimeKey = (dateStr || '') + ' ' + (timeStr || '');
+
+    const prev = latestByEmail[email];
+    if (!prev || dateTimeKey > prev.dateTimeKey) {
+      latestByEmail[email] = { date: dateStr, time: timeStr, dateTimeKey: dateTimeKey };
+    }
+
+    // If employee record missing, create a minimal one from attendance
+    if (!empByEmail[email]) {
+      empByEmail[email] = {
+        id: '',
+        email: email,
+        name: attRows[r][iName] || '',
+        role: '',
+        department: attRows[r][iDept] || '',
+        employmentType: '',
+        workMode: '',
+        reportingManager: '',
+        reportingManagerEmail: '',
+        manager: '',
+        managerEmail: '',
+        phone: '',
+        joinDate: '',
+        contractStartDate: '',
+        contractEndDate: '',
+        contractTotalDays: '',
+        noticePeriod: '',
+        renewalNotes: '',
+        currentProject: projRaw || ''
+      };
+    }
+  }
+
+  const emails = Object.keys(latestByEmail);
+  const employees = emails
+    .map(function(email) {
+      const emp = empByEmail[email] || { email: email };
+      const last = latestByEmail[email];
+      return Object.assign({}, emp, {
+        lastProjectCheckInDate: last ? last.date : '',
+        lastProjectCheckInTime: last ? last.time : ''
+      });
+    })
+    .sort(function(a, b) {
+      const ak = (a.lastProjectCheckInDate || '') + ' ' + (a.lastProjectCheckInTime || '');
+      const bk = (b.lastProjectCheckInDate || '') + ' ' + (b.lastProjectCheckInTime || '');
+      return bk.localeCompare(ak);
+    });
+
+  return {
+    success: true,
+    project: project,
+    employees: employees,
+    count: employees.length
+  };
+}
+
 function addManager(data) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let sheet = ss.getSheetByName('Managers');
@@ -801,6 +1322,7 @@ function addManager(data) {
     setupSheets();
     sheet = ss.getSheetByName('Managers');
   }
+  ensureManagerSchema(ss);
 
   const hdr = getManagerHeaders(sheet);
   const email = normalizeEmail(data.email);
@@ -810,6 +1332,8 @@ function addManager(data) {
   }
   if (!data.name) return { success: false, message: 'Name is required' };
   if (!data.managerType) return { success: false, message: 'Manager type is required' };
+  const managerType = normalizeProductivityTrackerLabel(data.managerType);
+  const role = normalizeProductivityTrackerLabel(data.role);
 
   if (sheet.getLastRow() > 1) {
     const lastRow = sheet.getLastRow();
@@ -827,12 +1351,11 @@ function addManager(data) {
   const newRow = new Array(totalCols).fill('');
 
   if (hdr['managerid'] !== undefined) newRow[hdr['managerid']] = managerId;
-  if (hdr['managertype'] !== undefined) newRow[hdr['managertype']] = data.managerType || '';
+  if (hdr['managertype'] !== undefined) newRow[hdr['managertype']] = managerType || '';
   if (hdr['name'] !== undefined) newRow[hdr['name']] = data.name || '';
   if (hdr['email'] !== undefined) newRow[hdr['email']] = email;
-  if (hdr['role'] !== undefined) newRow[hdr['role']] = data.role || '';
+  if (hdr['role'] !== undefined) newRow[hdr['role']] = role || '';
   if (hdr['department'] !== undefined) newRow[hdr['department']] = data.department || '';
-  if (hdr['team'] !== undefined) newRow[hdr['team']] = data.team || '';
   if (hdr['addedon'] !== undefined) newRow[hdr['addedon']] = now;
 
   sheet.appendRow(newRow);
@@ -843,6 +1366,7 @@ function updateManager(data) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   const sheet = ss.getSheetByName('Managers');
   if (!sheet) return { success: false, message: 'Managers sheet not found' };
+  ensureManagerSchema(ss);
 
   const hdr = getManagerHeaders(sheet);
   const lastRow = sheet.getLastRow();
@@ -853,15 +1377,16 @@ function updateManager(data) {
   if (!isAllowedWorkEmail(email)) {
     return { success: false, message: 'Email domain not allowed. Use @dashversemail.com, @dashverse.ai, or @dashtoon.com' };
   }
+  const managerType = normalizeProductivityTrackerLabel(data.managerType);
+  const role = normalizeProductivityTrackerLabel(data.role);
 
   for (let i = 0; i < rows.length; i++) {
     if (normalizeEmail(getValueByHeader(rows[i], hdr, 'email', 3)) === email) {
       const r = i + 2;
-      if (hasField(data, 'managerType')) setCellIfProvided(sheet, r, hdr, 'managertype', data.managerType);
+      if (hasField(data, 'managerType')) setCellIfProvided(sheet, r, hdr, 'managertype', managerType);
       if (hasField(data, 'name'))        setCellIfProvided(sheet, r, hdr, 'name', data.name);
-      if (hasField(data, 'role'))        setCellIfProvided(sheet, r, hdr, 'role', data.role);
+      if (hasField(data, 'role'))        setCellIfProvided(sheet, r, hdr, 'role', role);
       if (hasField(data, 'department'))  setCellIfProvided(sheet, r, hdr, 'department', data.department);
-      if (hasField(data, 'team'))        setCellIfProvided(sheet, r, hdr, 'team', data.team);
       return { success: true, message: 'Manager updated successfully!' };
     }
   }
@@ -873,6 +1398,7 @@ function deleteManager(email) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   const sheet = ss.getSheetByName('Managers');
   if (!sheet) return { success: false, message: 'Managers sheet not found' };
+  ensureManagerSchema(ss);
 
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return { success: false, message: 'No managers found' };
@@ -1015,106 +1541,95 @@ function deleteHRProfile(username) {
   return { success: false, message: 'HR profile not found' };
 }
 
-function markAttendance(data) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  let sheet = ss.getSheetByName('Attendance');
-  if (!sheet) {
-    setupSheets();
-    sheet = ss.getSheetByName('Attendance');
-  }
+function handleMarkAttendance(data) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    let sheet = ss.getSheetByName('Attendance');
+    if (!sheet) {
+      setupSheets();
+      sheet = ss.getSheetByName('Attendance');
+    }
 
-  const tz = Session.getScriptTimeZone();
-  const today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+    ensureAttendanceSchema(ss);
 
-  const now = new Date();
-  const currentTime = now.getHours() + now.getMinutes() / 60;
+    const email = normalizeEmail(data.email);
+    if (!email) return { success: false, message: 'Email is required' };
 
-  let loggedBefore15 = false;
-  let loggedToday = false;
-  let latestCheckIn = '';
+    const tz = Session.getScriptTimeZone();
+    const rawCheckIn = data.checkInTime || new Date().toISOString();
+    let checkInDate = new Date(rawCheckIn);
+    if (isNaN(checkInDate.getTime())) checkInDate = new Date();
 
-  if (sheet.getLastRow() > 1) {
-    const lastRow = sheet.getLastRow();
-    const existing = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+    const today = Utilities.formatDate(checkInDate, tz, 'yyyy-MM-dd');
+    const timeStr = Utilities.formatDate(checkInDate, tz, 'hh:mm a');
+    const colorInfo = getAttendanceColorInfo(checkInDate);
+
+    let currentProject = data.currentProject || '';
+    if (!currentProject) {
+      const employeeRes = getEmployee(email);
+      if (employeeRes.success && employeeRes.employee) {
+        currentProject = employeeRes.employee.currentProject || '';
+      }
+    }
+
     const aHdr = getAttHeaders(sheet);
-    const aIMail = aHdr['email'] !== undefined ? aHdr['email'] : 2;
-    const aIDate = aHdr['date'] !== undefined ? aHdr['date'] : 6;
-    const aICheckIn = aHdr['checkintime'] !== undefined ? aHdr['checkintime'] : 7;
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+      const emailIndex = aHdr['email'] !== undefined ? aHdr['email'] : 2;
+      const dateIndex = aHdr['date'] !== undefined ? aHdr['date'] : 6;
+      const checkInIndex = aHdr['checkintime'] !== undefined ? aHdr['checkintime'] : 7;
+      const colorIndex = aHdr['attendancecolor'] !== undefined ? aHdr['attendancecolor'] : -1;
 
-    for (let i = 0; i < existing.length; i++) {
-      const rowDate = existing[i][aIDate] ? existing[i][aIDate].toString().substring(0, 10) : '';
-      const rowEmail = normalizeEmail(existing[i][aIMail]);
-      if (rowEmail === normalizeEmail(data.email) && rowDate === today) {
-        loggedToday = true;
-        const checkInStr = existing[i][aICheckIn];
-        if (checkInStr) latestCheckIn = checkInStr;
-        if (checkInStr) {
-          const checkInTime = parseTimeTo24Hour(checkInStr);
-          if (checkInTime !== null && checkInTime < 15) {
-            loggedBefore15 = true;
-          }
+      for (let i = 0; i < rows.length; i++) {
+        const rowEmail = normalizeEmail(rows[i][emailIndex]);
+        const rowDate = formatSheetDate(rows[i][dateIndex]) || String(rows[i][dateIndex] || '').substring(0, 10);
+        if (rowEmail === email && rowDate === today) {
+          const recordedTime = rows[i][checkInIndex] || timeStr;
+          const recordedColor = colorIndex >= 0 ? rows[i][colorIndex] : '';
+          return {
+            success: true,
+            message: 'Already marked present today',
+            time: recordedTime,
+            date: today,
+            attendanceColor: getAttendanceColorFromRecordedValue(recordedColor, recordedTime)
+          };
         }
       }
     }
-  }
 
-  if (currentTime >= 15 && !loggedBefore15 && !loggedToday) {
-    return { success: false, message: 'Please login before 3:00pm (15:00).' };
-  }
+    const totalCols = sheet.getLastColumn();
+    const newRow = new Array(totalCols).fill('');
+    if (aHdr['recordid'] !== undefined) newRow[aHdr['recordid']] = 'ATT' + Date.now();
+    if (aHdr['empid'] !== undefined) newRow[aHdr['empid']] = data.id || data.empId || '';
+    if (aHdr['email'] !== undefined) newRow[aHdr['email']] = email;
+    if (aHdr['name'] !== undefined) newRow[aHdr['name']] = data.name || '';
+    if (aHdr['department'] !== undefined) newRow[aHdr['department']] = data.department || '';
+    if (aHdr['currentproject'] !== undefined) newRow[aHdr['currentproject']] = currentProject;
+    if (aHdr['date'] !== undefined) newRow[aHdr['date']] = today;
+    if (aHdr['checkintime'] !== undefined) newRow[aHdr['checkintime']] = timeStr;
+    if (aHdr['location'] !== undefined) newRow[aHdr['location']] = data.location || 'Office';
+    if (aHdr['status'] !== undefined) newRow[aHdr['status']] = 'Present';
+    if (aHdr['attendancecolor'] !== undefined) newRow[aHdr['attendancecolor']] = colorInfo.attendanceColor;
 
-  if (loggedToday) {
+    const rowNumber = sheet.getLastRow() + 1;
+    sheet.getRange(rowNumber, 1, 1, totalCols).setValues([newRow]);
+    applyAttendanceRowStyle(sheet, rowNumber, totalCols, colorInfo, aHdr['checkintime']);
+
     return {
       success: true,
-      alreadyMarked: true,
-      message: 'Already marked present today',
-      time: latestCheckIn,
-      date: today
+      message: 'Attendance marked successfully',
+      time: timeStr,
+      date: today,
+      attendanceColor: colorInfo.attendanceColor
     };
+  } catch (err) {
+    return { success: false, message: 'Error: ' + err.toString() };
   }
+}
 
-  let currentProject = data.currentProject || '';
-  if (!currentProject) {
-    try {
-      ensureEmployeeSchema(ss);
-      const empSheet = ss.getSheetByName('Employees');
-      if (empSheet) {
-        const empLastRow = empSheet.getLastRow();
-        const empRows = empSheet.getRange(2, 1, empLastRow - 1, empSheet.getLastColumn()).getValues();
-        const eHdr = getEmpHeaders(empSheet);
-        const iMail = eHdr['email'] !== undefined ? eHdr['email'] : 1;
-        const iProj = eHdr['currentproject'] !== undefined ? eHdr['currentproject'] : -1;
-        if (iProj !== -1) {
-          for (let i = 0; i < empRows.length; i++) {
-            if (normalizeEmail(empRows[i][iMail]) === normalizeEmail(data.email)) {
-              currentProject = empRows[i][iProj] || '';
-              break;
-            }
-          }
-        }
-      }
-    } catch (e) {}
-  }
-
-  const recordId = 'ATT' + Utilities.formatDate(new Date(), tz, 'yyyyMMddHHmmss');
-  const timeStr = Utilities.formatDate(new Date(), tz, 'HH:mm:ss');
-
-  const aHdr = getAttHeaders(sheet);
-  const totalC = sheet.getLastColumn();
-  const newRow = new Array(totalC).fill('');
-
-  if (aHdr['recordid'] !== undefined) newRow[aHdr['recordid']] = recordId;
-  if (aHdr['empid'] !== undefined) newRow[aHdr['empid']] = data.id || '';
-  if (aHdr['email'] !== undefined) newRow[aHdr['email']] = data.email || '';
-  if (aHdr['name'] !== undefined) newRow[aHdr['name']] = data.name || '';
-  if (aHdr['department'] !== undefined) newRow[aHdr['department']] = data.department || '';
-  if (aHdr['currentproject'] !== undefined) newRow[aHdr['currentproject']] = currentProject;
-  if (aHdr['date'] !== undefined) newRow[aHdr['date']] = today;
-  if (aHdr['checkintime'] !== undefined) newRow[aHdr['checkintime']] = timeStr;
-  if (aHdr['location'] !== undefined) newRow[aHdr['location']] = data.location || 'Office';
-  if (aHdr['status'] !== undefined) newRow[aHdr['status']] = 'Present';
-
-  sheet.appendRow(newRow);
-  return { success: true, message: 'Attendance marked!', time: timeStr, date: today };
+function markAttendance(data) {
+  return handleMarkAttendance(data);
 }
 
 function checkLoginBeforeCutoff(data) {
@@ -1253,8 +1768,139 @@ function captureAbsentUsers(data) {
   return { success: true, message: 'Absent users captured', absentCount: absentCount };
 }
 
+function handleRecordAbsent(data) {
+  return recordAbsentEmployees();
+}
+
+function recordAbsentEmployees() {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    ensureEmployeeSchema(ss);
+    ensureAttendanceSchema(ss);
+    ensureLeaveSchema(ss);
+    ensureAbsenceSchema(ss);
+
+    const empSheet = ss.getSheetByName('Employees');
+    const attSheet = ss.getSheetByName('Attendance');
+    const leaveSheet = ss.getSheetByName('Leaves');
+    const absenceSheet = ss.getSheetByName('Absences');
+
+    if (!empSheet || empSheet.getLastRow() < 2) {
+      return { success: true, recorded: 0 };
+    }
+
+    const tz = Session.getScriptTimeZone();
+    const today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+    const empRows = empSheet.getRange(2, 1, empSheet.getLastRow() - 1, empSheet.getLastColumn()).getValues();
+    const eHdr = getEmpHeaders(empSheet);
+
+    const presentEmails = new Set();
+    if (attSheet && attSheet.getLastRow() > 1) {
+      const attRows = attSheet.getRange(2, 1, attSheet.getLastRow() - 1, attSheet.getLastColumn()).getValues();
+      const aHdr = getAttHeaders(attSheet);
+      const attEmailIndex = aHdr['email'] !== undefined ? aHdr['email'] : 2;
+      const attDateIndex = aHdr['date'] !== undefined ? aHdr['date'] : 6;
+      for (let i = 0; i < attRows.length; i++) {
+        const rowDate = formatSheetDate(attRows[i][attDateIndex]) || String(attRows[i][attDateIndex] || '').substring(0, 10);
+        if (rowDate === today) {
+          presentEmails.add(normalizeEmail(attRows[i][attEmailIndex]));
+        }
+      }
+    }
+
+    const onLeaveEmails = new Set();
+    if (leaveSheet && leaveSheet.getLastRow() > 1) {
+      const leaveRows = leaveSheet.getRange(2, 1, leaveSheet.getLastRow() - 1, leaveSheet.getLastColumn()).getValues();
+      const lHdr = getLeaveHeaders(leaveSheet);
+      for (let i = 0; i < leaveRows.length; i++) {
+        const status = normalizeLeaveStatus(getValueByHeader(leaveRows[i], lHdr, 'status', 10));
+        if (status !== 'Approved') continue;
+
+        const fromDate = formatSheetDate(getValueByHeader(leaveRows[i], lHdr, 'fromdate', 6));
+        const toDate = formatSheetDate(getValueByHeader(leaveRows[i], lHdr, 'todate', 7));
+        if (fromDate && toDate && today >= fromDate && today <= toDate) {
+          onLeaveEmails.add(normalizeEmail(getValueByHeader(leaveRows[i], lHdr, 'email', 2)));
+        }
+      }
+    }
+
+    const alreadyAbsent = new Set();
+    if (absenceSheet && absenceSheet.getLastRow() > 1) {
+      const existingAbsences = absenceSheet.getRange(2, 1, absenceSheet.getLastRow() - 1, absenceSheet.getLastColumn()).getValues();
+      for (let i = 0; i < existingAbsences.length; i++) {
+        const rowDate = formatSheetDate(existingAbsences[i][0]) || String(existingAbsences[i][0] || '').substring(0, 10);
+        if (rowDate === today) {
+          alreadyAbsent.add(normalizeEmail(existingAbsences[i][2]));
+        }
+      }
+    }
+
+    const absentRows = [];
+    for (let i = 0; i < empRows.length; i++) {
+      const email = normalizeEmail(getValueByHeader(empRows[i], eHdr, 'email', 1));
+      const status = (getValueByHeader(empRows[i], eHdr, 'status', -1) || 'Active').toString().trim().toLowerCase();
+      const joinDate = formatSheetDate(getValueByHeader(empRows[i], eHdr, 'joindate', -1));
+      if (!email) continue;
+      if (status !== 'active') continue;
+      if (joinDate && joinDate > today) continue;
+      if (presentEmails.has(email)) continue;
+      if (onLeaveEmails.has(email)) continue;
+      if (alreadyAbsent.has(email)) continue;
+
+      const employmentType = getValueByHeader(empRows[i], eHdr, 'employmenttype', -1) ||
+        getValueByHeader(empRows[i], eHdr, 'type', -1) || 'Permanent';
+
+      absentRows.push([
+        today,
+        getValueByHeader(empRows[i], eHdr, 'empid', 0),
+        email,
+        getValueByHeader(empRows[i], eHdr, 'name', 2),
+        getValueByHeader(empRows[i], eHdr, 'department', 4),
+        normalizeProductivityTrackerLabel(getValueByHeader(empRows[i], eHdr, 'role', 3)),
+        getValueByHeader(empRows[i], eHdr, 'reportingmanager', -1),
+        getValueByHeader(empRows[i], eHdr, 'manager', -1),
+        getValueByHeader(empRows[i], eHdr, 'currentproject', -1),
+        getValueByHeader(empRows[i], eHdr, 'workmode', -1),
+        employmentType,
+        'Absent'
+      ]);
+    }
+
+    if (absentRows.length > 0) {
+      const startRow = absenceSheet.getLastRow() + 1;
+      absenceSheet.getRange(startRow, 1, absentRows.length, ABSENCE_HEADERS.length).setValues(absentRows);
+      absenceSheet.getRange(startRow, 1, absentRows.length, ABSENCE_HEADERS.length).setBackground('#f8d7da');
+    }
+
+    return { success: true, recorded: absentRows.length };
+  } catch (err) {
+    Logger.log('recordAbsentEmployees error: ' + err.toString());
+    return { success: false, message: 'Error: ' + err.toString(), error: err.toString() };
+  }
+}
+
+function setupDailyAbsentTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function(trigger) {
+    if (trigger.getHandlerFunction() === 'recordAbsentEmployees') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  ScriptApp.newTrigger('recordAbsentEmployees')
+    .timeBased()
+    .atHour(23)
+    .nearMinute(59)
+    .everyDays(1)
+    .create();
+
+  Logger.log('Daily absent recording trigger set up successfully');
+  return { success: true, message: 'Daily absent recording trigger set up successfully' };
+}
+
 function getAttendance(email) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Attendance');
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  ensureAttendanceSchema(ss);
+  const sheet = ss.getSheetByName('Attendance');
   if (!sheet) return { success: true, attendance: [] };
 
   const lastRow = sheet.getLastRow();
@@ -1270,6 +1916,7 @@ function getAttendance(email) {
   const iSts = hdr['status'] !== undefined ? hdr['status'] : 9;
   const iProj = hdr['currentproject'] !== undefined ? hdr['currentproject'] : -1;
   const iRec = hdr['recordid'] !== undefined ? hdr['recordid'] : 0;
+  const iColor = hdr['attendancecolor'] !== undefined ? hdr['attendancecolor'] : -1;
 
   const wantedEmail = normalizeEmail(email);
   const result = [];
@@ -1281,7 +1928,8 @@ function getAttendance(email) {
         checkIn: rows[i][iCIn] || '',
         location: rows[i][iLoc] || 'Office',
         status: rows[i][iSts] || 'Present',
-        currentProject: iProj >= 0 ? (rows[i][iProj] || '') : ''
+        currentProject: iProj >= 0 ? (rows[i][iProj] || '') : '',
+        attendanceColor: iColor >= 0 ? (rows[i][iColor] || '') : ''
       });
     }
   }
@@ -1290,7 +1938,9 @@ function getAttendance(email) {
 }
 
 function getAllAttendance() {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Attendance');
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  ensureAttendanceSchema(ss);
+  const sheet = ss.getSheetByName('Attendance');
   if (!sheet || sheet.getLastRow() < 2) return { success: true, attendance: [] };
 
   const lastRow = sheet.getLastRow();
@@ -1307,6 +1957,7 @@ function getAllAttendance() {
   const iCIn = hdr['checkintime'] !== undefined ? hdr['checkintime'] : 7;
   const iLoc = hdr['location'] !== undefined ? hdr['location'] : 8;
   const iSts = hdr['status'] !== undefined ? hdr['status'] : 9;
+  const iColor = hdr['attendancecolor'] !== undefined ? hdr['attendancecolor'] : -1;
 
   const result = [];
   for (let i = 0; i < rows.length; i++) {
@@ -1321,7 +1972,8 @@ function getAllAttendance() {
         date: formatSheetDate(rows[i][iDate]) || '',
         checkIn: rows[i][iCIn] || '',
         location: rows[i][iLoc] || 'Office',
-        status: rows[i][iSts] || 'Present'
+        status: rows[i][iSts] || 'Present',
+        attendanceColor: iColor >= 0 ? (rows[i][iColor] || '') : ''
       });
     }
   }
@@ -1336,6 +1988,8 @@ function applyLeave(data) {
     setupSheets();
     sheet = ss.getSheetByName('Leaves');
   }
+  ensureLeaveSchema(ss);
+  sheet = ss.getSheetByName('Leaves');
 
   const employeeEmail = normalizeEmail(data.email);
   if (!employeeEmail) return { success: false, message: 'Employee email is required' };
@@ -1421,12 +2075,27 @@ function applyLeave(data) {
     }
   };
 
-  sheet.appendRow([
-    leaveId, leavePayload.empId, leavePayload.email, leavePayload.name, leavePayload.department,
-    leavePayload.leaveType, leavePayload.fromDate, leavePayload.toDate, days,
-    leavePayload.reason, 'Pending', now, now,
-    '', '', '', '', ''
-  ]);
+  const hdr = getLeaveHeaders(sheet);
+  const newRow = [];
+  for (let col = 0; col < sheet.getLastColumn(); col++) newRow[col] = '';
+  if (hdr['leaveid'] !== undefined) newRow[hdr['leaveid']] = leaveId;
+  if (hdr['empid'] !== undefined) newRow[hdr['empid']] = leavePayload.empId;
+  if (hdr['email'] !== undefined) newRow[hdr['email']] = leavePayload.email;
+  if (hdr['name'] !== undefined) newRow[hdr['name']] = leavePayload.name;
+  if (hdr['department'] !== undefined) newRow[hdr['department']] = leavePayload.department;
+  if (hdr['leavetype'] !== undefined) newRow[hdr['leavetype']] = leavePayload.leaveType;
+  if (hdr['fromdate'] !== undefined) newRow[hdr['fromdate']] = leavePayload.fromDate;
+  if (hdr['todate'] !== undefined) newRow[hdr['todate']] = leavePayload.toDate;
+  if (hdr['days'] !== undefined) newRow[hdr['days']] = days;
+  if (hdr['reason'] !== undefined) newRow[hdr['reason']] = leavePayload.reason;
+  if (hdr['status'] !== undefined) newRow[hdr['status']] = 'Pending';
+  if (hdr['appliedon'] !== undefined) newRow[hdr['appliedon']] = now;
+  if (hdr['updatedon'] !== undefined) newRow[hdr['updatedon']] = now;
+  if (hdr['reportingmanager'] !== undefined) newRow[hdr['reportingmanager']] = leavePayload.reportingManager;
+  if (hdr['reportingmanageremail'] !== undefined) newRow[hdr['reportingmanageremail']] = leavePayload.reportingManagerEmail;
+  if (hdr['manager'] !== undefined) newRow[hdr['manager']] = leavePayload.manager;
+  if (hdr['manageremail'] !== undefined) newRow[hdr['manageremail']] = leavePayload.managerEmail;
+  sheet.appendRow(newRow);
 
   let notificationResult = { ok: false, sent: [], issues: [] };
   try {
@@ -1462,7 +2131,9 @@ function applyLeave(data) {
 }
 
 function getLeaves(email) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Leaves');
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  ensureLeaveSchema(ss);
+  const sheet = ss.getSheetByName('Leaves');
   if (!sheet) return { success: true, leaves: [] };
 
   const lastRow = sheet.getLastRow();
@@ -1471,12 +2142,17 @@ function getLeaves(email) {
   const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
   const hdr = getLeaveHeaders(sheet);
   const wantedEmail = normalizeEmail(email);
+  let employee = null;
+  try {
+    const empData = getEmployee(wantedEmail);
+    if (empData.success && empData.employee) employee = empData.employee;
+  } catch (ignored) {}
 
   const result = [];
   for (let i = 0; i < rows.length; i++) {
     const rowEmail = normalizeEmail(getValueByHeader(rows[i], hdr, 'email', 2));
     if (rowEmail === wantedEmail) {
-      result.push(buildLeaveObject(rows[i], hdr));
+      result.push(attachEmployeeManagersToLeave(buildLeaveObject(rows[i], hdr), employee));
     }
   }
 
@@ -1484,17 +2160,30 @@ function getLeaves(email) {
 }
 
 function getAllLeaves() {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Leaves');
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  ensureLeaveSchema(ss);
+  const sheet = ss.getSheetByName('Leaves');
   if (!sheet || sheet.getLastRow() < 2) return { success: true, leaves: [] };
 
   const lastRow = sheet.getLastRow();
   const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
   const hdr = getLeaveHeaders(sheet);
+  const employeesByEmail = {};
+  try {
+    const empData = getEmployees();
+    if (empData.success && empData.employees) {
+      empData.employees.forEach(function(emp) {
+        const key = normalizeEmail(emp.email);
+        if (key) employeesByEmail[key] = emp;
+      });
+    }
+  } catch (ignored) {}
 
   const result = [];
   for (let i = 0; i < rows.length; i++) {
     if (getValueByHeader(rows[i], hdr, 'leaveid', 0)) {
-      result.push(buildLeaveObject(rows[i], hdr));
+      const leave = buildLeaveObject(rows[i], hdr);
+      result.push(attachEmployeeManagersToLeave(leave, employeesByEmail[normalizeEmail(leave.email)]));
     }
   }
 
@@ -1502,7 +2191,9 @@ function getAllLeaves() {
 }
 
 function updateLeaveStatus(data) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Leaves');
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  ensureLeaveSchema(ss);
+  const sheet = ss.getSheetByName('Leaves');
   if (!sheet) return { success: false, message: 'Sheet not found' };
 
   const lastRow = sheet.getLastRow();
@@ -1513,6 +2204,12 @@ function updateLeaveStatus(data) {
   const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
   const requestedId = (data.id || '').toString().trim();
   if (!requestedId) return { success: false, message: 'Leave ID is required' };
+  const requestedStatus = normalizeLeaveStatus(data.status || 'Pending');
+  const requestedReason = (data.rejectionReason || '').toString().trim();
+
+  if ((requestedStatus === 'Rejected' || requestedStatus === 'Cancelled') && !requestedReason) {
+    return { success: false, message: 'Rejection reason is required' };
+  }
 
   for (let i = 0; i < rows.length; i++) {
     const leaveId = getValueByHeader(rows[i], hdr, 'leaveid', 0);
@@ -1578,30 +2275,32 @@ function updateLeaveStatus(data) {
 
       const totalCols = sheet.getLastColumn();
       sheet.getRange(r, 1, 1, totalCols).setBackground(color);
+      SpreadsheetApp.flush();
 
       let notificationResult = { ok: false, sent: [], issues: [] };
       try {
-        const employeeData = getEmployee(getValueByHeader(rows[i], hdr, 'email', 2));
-        if (employeeData.success && employeeData.employee) {
-          const leaveRecord = buildLeaveObject(rows[i], hdr);
-          leaveRecord.status = newStatus;
-          leaveRecord.approvedBy = data.approvedBy || leaveRecord.approvedBy || '';
-          leaveRecord.rejectedBy = data.rejectedBy || leaveRecord.rejectedBy || '';
-          leaveRecord.rejectionReason = data.rejectionReason || leaveRecord.rejectionReason || '';
-          leaveRecord.updatedOn = now;
-          notificationResult = sendLeaveStatusUpdateEmail(employeeData.employee, leaveRecord);
-        } else {
-          notificationResult.issues.push('Employee record not found for leave status email');
-          Logger.log(notificationResult.issues[notificationResult.issues.length - 1]);
-        }
+        const freshRow = sheet.getRange(r, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const leaveRecord = buildLeaveObject(freshRow, hdr);
+        leaveRecord.status = newStatus;
+        leaveRecord.approvedBy = data.approvedBy || leaveRecord.approvedBy || '';
+        leaveRecord.rejectedBy = data.rejectedBy || leaveRecord.rejectedBy || '';
+        leaveRecord.rejectionReason = data.rejectionReason || leaveRecord.rejectionReason || '';
+        leaveRecord.updatedOn = now;
+        const employeeForMail = getEmployeeForLeaveNotification(leaveRecord);
+        notificationResult = sendLeaveStatusUpdateEmail(employeeForMail, leaveRecord);
       } catch (emailErr) {
         notificationResult.issues.push('Leave status email error: ' + emailErr.toString());
         Logger.log(notificationResult.issues[notificationResult.issues.length - 1]);
       }
 
+      const employeeMailSent = notificationResult.sent.some(function(item) {
+        return item.indexOf('employee:') === 0;
+      });
+      const messageSuffix = employeeMailSent ? '' : ' Status updated, but employee email was not sent.';
+
       return {
         success: true,
-        message: 'Leave ' + newStatus.toLowerCase() + ' successfully!',
+        message: 'Leave ' + newStatus.toLowerCase() + ' successfully!' + messageSuffix,
         notification: notificationResult
       };
     }
@@ -1736,10 +2435,10 @@ function findManagerEmailByReference(referenceValue, managerType) {
 
   const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
   const hdr = getManagerHeaders(sheet);
-  const wantedType = (managerType || '').toString().trim().toLowerCase();
+  const wantedType = normalizeProductivityTrackerLabel(managerType).toLowerCase();
 
   for (let i = 0; i < rows.length; i++) {
-    const rowType = (getValueByHeader(rows[i], hdr, 'managertype', 1) || '').toString().trim().toLowerCase();
+    const rowType = normalizeProductivityTrackerLabel(getValueByHeader(rows[i], hdr, 'managertype', 1)).toLowerCase();
     const rowName = (getValueByHeader(rows[i], hdr, 'name', 2) || '').toString().trim().toLowerCase();
     const rowEmail = normalizeEmail(getValueByHeader(rows[i], hdr, 'email', 3));
     
@@ -1902,9 +2601,9 @@ function sendLeaveApplicationEmail(employee, data, leaveId) {
       const reportingManagerEmailBody = '<html>' +
         '<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">' +
         '<div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">' +
-        '<h2 style="color: #667eea; margin-top: 0;">Leave Request Notification</h2>' +
+        '<h2 style="color: #667eea; margin-top: 0;">Leave Request for Approval</h2>' +
         '<p>Dear ' + reportingManagerName + ',</p>' +
-        '<p style="color: #666;"><strong>' + empName + '</strong> has applied for ' + leaveType + '. This is for your information.</p>' +
+        '<p style="color: #666;"><strong>' + empName + '</strong> has applied for ' + leaveType + '. Please review and approve or reject this request.</p>' +
         '<div style="background-color: #fff; padding: 15px; border-left: 4px solid #667eea; margin: 15px 0;">' +
         '<p><strong>Employee Name:</strong> ' + empName + '</p>' +
         '<p><strong>Employee Email:</strong> ' + empEmail + '</p>' +
@@ -1915,7 +2614,7 @@ function sendLeaveApplicationEmail(employee, data, leaveId) {
         '<p><strong>Reason:</strong> ' + reason + '</p>' +
         '</div>' +
         warningHtml +
-        '<p style="color: #666; margin-top: 15px;">This request has been forwarded to the direct manager for approval.</p>' +
+        '<p style="color: #666; margin-top: 15px;"><strong>Action Required:</strong> Please visit the AttendPro Reporting Manager Portal to approve or reject this request.</p>' +
         '<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">' +
         '<p style="color: #999; font-size: 0.85em;">AttendPro System | Do not reply to this email</p>' +
         '</div>' +
@@ -1968,6 +2667,22 @@ function sendLeaveStatusUpdateEmail(employee, leaveRecord) {
     const approver = leaveRecord.approvedBy || leaveRecord.rejectedBy || 'Manager/HR';
     const rejectionReason = leaveRecord.rejectionReason || '';
     const statusColor = status === 'Approved' ? '#16a34a' : status === 'Rejected' ? '#dc2626' : '#d97706';
+    let managerEmail = '';
+    let reportingManagerEmail = '';
+
+    if (employee.managerEmail) {
+      managerEmail = normalizeEmail(employee.managerEmail);
+    } else if (employee.manager) {
+      managerEmail = findManagerEmailByReference(employee.manager, 'manager') ||
+        findManagerEmailByReference(employee.manager, '');
+    }
+
+    if (employee.reportingManagerEmail) {
+      reportingManagerEmail = normalizeEmail(employee.reportingManagerEmail);
+    } else if (employee.reportingManager) {
+      reportingManagerEmail = findManagerEmailByReference(employee.reportingManager, 'reporting') ||
+        findManagerEmailByReference(employee.reportingManager, '');
+    }
 
     let extraHtml = '';
     if (status === 'Approved') {
@@ -2000,12 +2715,25 @@ function sendLeaveStatusUpdateEmail(employee, leaveRecord) {
       '</div>' +
       '</body>' +
       '</html>';
+    const plainBody = 'Leave Request ' + status + '\n\n' +
+      'Dear ' + empName + ',\n\n' +
+      'Your leave request has been updated.\n\n' +
+      'Leave ID: ' + (leaveRecord.leaveId || leaveRecord.id || '') + '\n' +
+      'Leave Type: ' + leaveType + '\n' +
+      'From Date: ' + fromDate + '\n' +
+      'To Date: ' + toDate + '\n' +
+      'Reason: ' + reason + '\n' +
+      'Status: ' + status + '\n' +
+      (status === 'Approved' ? 'Approved By: ' + approver + '\n' : '') +
+      (status === 'Rejected' ? 'Rejected By: ' + approver + '\nRejection Reason: ' + (rejectionReason || 'Not provided') + '\n' : '') +
+      (status === 'Cancelled' ? 'Cancelled By: ' + approver + '\nCancellation Reason: ' + (rejectionReason || 'Cancelled') + '\n' : '');
 
     // Send email to employee
     try {
       MailApp.sendEmail({
         to: empEmail,
         subject: 'Leave Request ' + status + ' - ' + empName,
+        body: plainBody,
         htmlBody: htmlBody
       });
       result.sent.push('employee:' + empEmail);
@@ -2015,16 +2743,8 @@ function sendLeaveStatusUpdateEmail(employee, leaveRecord) {
       Logger.log(result.issues[result.issues.length - 1]);
     }
     
-    // Also send notification to manager about the decision
-    if (status === 'Approved' || status === 'Rejected') {
-      let managerEmail = '';
-      if (employee.managerEmail) {
-        managerEmail = normalizeEmail(employee.managerEmail);
-      } else if (employee.manager) {
-        managerEmail = findManagerEmailByReference(employee.manager, 'manager') || 
-                       findManagerEmailByReference(employee.manager, '');
-      }
-      
+    // Also send notification to manager and reporting manager about the decision
+    if (status === 'Approved' || status === 'Rejected' || status === 'Cancelled') {
       if (managerEmail && managerEmail.indexOf('@') > 0) {
         const managerNotificationHtml = '<html>' +
           '<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">' +
@@ -2052,6 +2772,7 @@ function sendLeaveStatusUpdateEmail(employee, leaveRecord) {
           MailApp.sendEmail({
             to: managerEmail,
             subject: 'Leave Request ' + status + ' - ' + empName,
+            body: plainBody,
             htmlBody: managerNotificationHtml
           });
           result.sent.push('manager:' + managerEmail);
@@ -2062,6 +2783,46 @@ function sendLeaveStatusUpdateEmail(employee, leaveRecord) {
         }
       } else {
         Logger.log('Manager email not found for leave status update notification. Employee: ' + empEmail);
+      }
+
+      if (reportingManagerEmail && reportingManagerEmail.indexOf('@') > 0 && reportingManagerEmail !== managerEmail) {
+        const reportingNotificationHtml = '<html>' +
+          '<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">' +
+          '<div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">' +
+          '<h2 style="color: ' + statusColor + '; margin-top: 0;">Leave Request ' + status + ' - ' + empName + '</h2>' +
+          '<p>Dear Reporting Manager,</p>' +
+          '<p>The following leave request has been ' + status.toLowerCase() + ':</p>' +
+          '<div style="background-color: #fff; padding: 15px; border-left: 4px solid ' + statusColor + '; margin: 15px 0;">' +
+          '<p><strong>Employee Name:</strong> ' + empName + '</p>' +
+          '<p><strong>Employee Email:</strong> ' + empEmail + '</p>' +
+          '<p><strong>Leave ID:</strong> ' + (leaveRecord.leaveId || leaveRecord.id || '') + '</p>' +
+          '<p><strong>Leave Type:</strong> ' + leaveType + '</p>' +
+          '<p><strong>From Date:</strong> ' + fromDate + '</p>' +
+          '<p><strong>To Date:</strong> ' + toDate + '</p>' +
+          '<p><strong>Status:</strong> <span style="color: ' + statusColor + '; font-weight: bold;">' + status + '</span></p>' +
+          extraHtml +
+          '</div>' +
+          '<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">' +
+          '<p style="color: #999; font-size: 0.85em;">AttendPro System | Do not reply to this email</p>' +
+          '</div>' +
+          '</body>' +
+          '</html>';
+
+        try {
+          MailApp.sendEmail({
+            to: reportingManagerEmail,
+            subject: 'Leave Request ' + status + ' - ' + empName,
+            body: plainBody,
+            htmlBody: reportingNotificationHtml
+          });
+          result.sent.push('reporting:' + reportingManagerEmail);
+          Logger.log('Leave status update email sent to reporting manager: ' + reportingManagerEmail);
+        } catch (reportEmailErr) {
+          result.issues.push('Failed to send reporting manager status email: ' + reportEmailErr.toString());
+          Logger.log(result.issues[result.issues.length - 1]);
+        }
+      } else {
+        Logger.log('Reporting manager email not found for leave status update notification. Employee: ' + empEmail);
       }
     }
     
@@ -2100,5 +2861,46 @@ function testLeaveMail() {
   const leaveId = 'LVTEST001';
   const result = sendLeaveApplicationEmail(employee, data, leaveId);
   Logger.log(JSON.stringify(result));
+  return result;
+}
+
+function testEmailSystem(data) {
+  const result = { success: false, message: '', details: {} };
+  try {
+    // Test MailApp availability
+    const testEmail = data.testEmail || 'test@dashverse.ai';
+    const subject = 'AttendPro Email System Test - ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+    const htmlBody = '<html><body style="font-family: Arial, sans-serif;">' +
+      '<h2 style="color: #667eea;">✅ AttendPro Email System Test</h2>' +
+      '<p>This is a test email to verify the email system is working properly.</p>' +
+      '<p><strong>Test Time:</strong> ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss') + '</p>' +
+      '<p><strong>Status:</strong> <span style="color: #16a34a; font-weight: bold;">Email System Operational</span></p>' +
+      '<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">' +
+      '<p style="color: #999; font-size: 0.85em;">AttendPro System | Do not reply to this email</p>' +
+      '</body></html>';
+    
+    MailApp.sendEmail({
+      to: testEmail,
+      subject: subject,
+      htmlBody: htmlBody
+    });
+    
+    result.success = true;
+    result.message = 'Test email sent successfully!';
+    result.details = {
+      sentTo: testEmail,
+      timestamp: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss'),
+      mailService: 'MailApp operational'
+    };
+    Logger.log('Email test successful: ' + JSON.stringify(result));
+  } catch (err) {
+    result.success = false;
+    result.message = 'Email test failed: ' + err.toString();
+    result.details = {
+      error: err.toString(),
+      timestamp: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss')
+    };
+    Logger.log('Email test failed: ' + err.toString());
+  }
   return result;
 }

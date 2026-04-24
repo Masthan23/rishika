@@ -84,12 +84,12 @@
         [data-theme="dark"] #loginPg { background:linear-gradient(135deg,#0f1f1a,#0d2b22,#0a1a15) }
         [data-theme="light"] #loginPg { background:linear-gradient(135deg,#f0fdf6,#dcfce7,#f0fff4) }
         .login-card { background:
-            linear-gradient(155deg,rgba(52,211,153,.14) 0%,rgba(15,23,42,.08) 28%,rgba(255,255,255,.03) 100%),
+            linear-gradient(155deg,rgba(34,197,94,.1) 0%,rgba(59,130,246,.08) 26%,rgba(255,255,255,.03) 100%),
             linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
             backdrop-filter:blur(32px); border:1px solid rgba(52,211,153,.24); border-radius:28px; padding:38px 30px 32px; width:100%; max-width:430px; box-shadow:0 30px 70px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08); position:relative; overflow:hidden; animation:shard-in 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; margin:auto; transition:var(--tr-3d); transform-style:preserve-3d; clip-path:polygon(0 0,calc(100% - 26px) 0,100% 26px,100% calc(100% - 28px),calc(100% - 34px) 100%,0 100%); }
-        .login-card:hover { transform:translateY(-8px) scale(1.02) rotateX(4deg) rotateY(-5deg); box-shadow:0 40px 90px rgba(0,0,0,.4), 0 10px 30px rgba(5,150,105,.18); z-index:10; }
-        .login-card::before { content:''; position:absolute; inset:0; background:linear-gradient(115deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,0) 34%,rgba(52,211,153,.08) 56%,rgba(0,0,0,0) 100%); pointer-events:none; }
-        .login-card::after { content:''; position:absolute; right:-12px; bottom:-12px; width:138px; height:138px; background:radial-gradient(circle,rgba(52,211,153,.24) 0%,rgba(52,211,153,0) 72%); pointer-events:none; }
+        .login-card:hover { transform:translateY(-8px) scale(1.02) rotateX(4deg) rotateY(-5deg); box-shadow:0 40px 90px rgba(0,0,0,.4), 0 10px 30px rgba(59,130,246,.18); z-index:10; }
+        .login-card::before { content:''; position:absolute; inset:0; background:linear-gradient(115deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,0) 34%,rgba(96,165,250,.08) 58%,rgba(0,0,0,0) 100%); pointer-events:none; }
+        .login-card::after { content:''; position:absolute; right:-12px; bottom:-12px; width:138px; height:138px; background:radial-gradient(circle,rgba(96,165,250,.22) 0%,rgba(96,165,250,0) 72%); pointer-events:none; }
         @keyframes pop { from{opacity:0;transform:scale(.8) translateY(28px)} to{opacity:1;transform:scale(1) translateY(0)} }
         .lgo { text-align:center; margin-bottom:22px }
         .lgo-ic { width:62px; height:62px; border-radius:22%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin:0 auto 12px; box-shadow:0 10px 32px rgba(5,150,105,.45); animation:ifl 3s ease-in-out infinite }
@@ -99,14 +99,14 @@
         .lgo h1 span { color:var(--mgac) }
         .lgo p { color:var(--muted); font-size:.85rem; margin-top:4px }
         .role-tabs { display:flex; gap:0; background:transparent; border:none; border-radius:0; padding:0; margin-bottom:22px }
-        .role-tab { flex:1; min-height:112px; padding:16px 14px 14px; text-align:center; cursor:pointer; font-size:.8rem; font-weight:700; transition:var(--tr-3d); color:var(--txt); border:1px solid rgba(52,211,153,.18); background:
-            linear-gradient(155deg,rgba(52,211,153,.16) 0%,rgba(4,120,87,.12) 55%,rgba(0,0,0,.05) 100%);
-            touch-action:manipulation; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,0 100%); box-shadow:0 18px 32px rgba(2,44,34,.2), inset 0 1px 0 rgba(255,255,255,.05); position:relative; overflow:hidden }
+        .role-tab { flex:1; min-height:112px; padding:16px 14px 14px; text-align:center; cursor:pointer; font-size:.8rem; font-weight:700; transition:var(--tr-3d); color:var(--txt); border:1px solid rgba(96,165,250,.18); background:
+            linear-gradient(155deg,rgba(59,130,246,.18) 0%,rgba(29,78,216,.12) 55%,rgba(0,0,0,.05) 100%);
+            touch-action:manipulation; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,0 100%); box-shadow:0 18px 32px rgba(15,23,42,.22), inset 0 1px 0 rgba(255,255,255,.05); position:relative; overflow:hidden }
         .role-tab .rt-ic { font-size:1.3rem }
         .role-tab .rt-lbl { font-size:.84rem; letter-spacing:.02em }
         .role-tab .rt-sub { font-size:.64rem; opacity:.76; text-transform:uppercase; letter-spacing:.08em }
-        .role-tab.on { border-color:rgba(52,211,153,.38); box-shadow:0 24px 46px rgba(5,150,105,.26), inset 0 1px 0 rgba(255,255,255,.08); }
-        .role-tab::before { content:''; position:absolute; inset:0; background:linear-gradient(130deg,rgba(255,255,255,.12),transparent 34%,rgba(52,211,153,.1) 64%,transparent 100%); pointer-events:none; }
+        .role-tab.on { border-color:rgba(96,165,250,.38); box-shadow:0 24px 46px rgba(37,99,235,.22), inset 0 1px 0 rgba(255,255,255,.08); }
+        .role-tab::before { content:''; position:absolute; inset:0; background:linear-gradient(130deg,rgba(255,255,255,.12),transparent 34%,rgba(96,165,250,.1) 64%,transparent 100%); pointer-events:none; }
         .role-tab:active { transform:scale(.97) }
         .conn-bar { display:flex; align-items:center; gap:8px; font-size:.73rem; padding:7px 13px; border-radius:50px; margin-bottom:14px; width:fit-content }
         .conn-live { background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.3); color:#059669 }
@@ -475,7 +475,7 @@
     </style>
 </head>
 <body>
-    <div id="bootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading Manager Portal">
+    <div id="bootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading Reporting Manager Portal">
         <div class="ap-loader" aria-hidden="true">
             <div class="ap-loader__spin">
                 <div class="ap-loader__ring"></div>
@@ -536,20 +536,20 @@
                 </div>
             </div>
             <div class="lgo">
-                <div class="lgo-ic"><img src="1.jpg" alt="" decoding="async" onerror="this.style.display='none';this.parentElement.textContent='👔';"/></div>
+                <div class="lgo-ic"><img src="1.jpg" alt="" decoding="async" onerror="this.style.display='none';this.parentElement.textContent='Reporting';"/></div>
                 <h1>Attend<span>Pro</span></h1>
-                <p>Manager Portal</p>
+                <p>Reporting Manager Portal</p>
             </div>
             <div id="connBar"></div>
             <div style="margin-bottom:18px;">
-                <label class="flbl">Manager Access</label>
+                <label class="flbl">Reporting Manager Access</label>
                 <div class="role-tabs">
-                    <button class="role-tab on" id="rt-manager" type="button">
-                        <span class="rt-ic">👔</span><span class="rt-lbl">Manager</span><span class="rt-sub">Full team</span>
+                    <button class="role-tab on" id="rt-reporting" type="button">
+                        <span class="rt-ic">📊</span><span class="rt-lbl">Rep. Manager</span><span class="rt-sub">Reporting team</span>
                     </button>
                 </div>
             </div>
-            <div class="domain-note">🌐 <div><strong>Company domain required.</strong> Your email must match the managerEmail field in employee records.</div></div>
+            <div class="domain-note">🌐 <div><strong>Company domain required.</strong> Your email must match the reportingManagerEmail field in employee records.</div></div>
             <div id="loginAlert"></div>
             <div class="fgrp">
                 <label class="flbl">Work Email Address (@dashverse.ai / @dashversemail.com / @dashtoon.com)</label>
@@ -559,10 +559,10 @@
                 <label class="flbl">Password</label>
                 <div class="iw"><span class="iico">🔒</span><input type="password" class="finp" id="mgrPass" placeholder="••••••••" autocomplete="current-password"/><span class="pw-toggle" id="pwToggle" onclick="togglePw()">👁️</span></div>
             </div>
-            <button class="btn btn-mg btn-fw" id="loginBtn" onclick="doLogin()">🔐 Access Manager Portal</button>
+            <button class="btn btn-mg btn-fw" id="loginBtn" onclick="doLogin()">🔐 Access Reporting Manager Portal</button>
             <div class="hint-box">
-                <div class="hb-row"><span>👔</span><span><strong>Manager password:</strong> manager@123</span></div>
-                <div style="margin-top:7px;font-size:.68rem;opacity:.7;line-height:1.5;">Your company email (@dashverse.ai, @dashversemail.com, or @dashtoon.com) must be entered by HR in the Manager Email field of each employee.</div>
+                <div class="hb-row"><span>📊</span><span><strong>Rep. Manager password:</strong> reporting@123</span></div>
+                <div style="margin-top:7px;font-size:.68rem;opacity:.7;line-height:1.5;">Your company email (@dashverse.ai, @dashversemail.com, or @dashtoon.com) must be entered by HR in the Reporting Manager Email field of each employee.</div>
             </div>
         </div>
     </div>
@@ -625,8 +625,8 @@
                 <div class="tb-l">
                     <button class="go-home-btn" onclick="window.location.href='app.html'" title="Go to Home">🏠</button>
                     <div>
-                        <h2 id="panelTitle">Manager Dashboard</h2>
-                        <p id="panelSub">Your team overview</p>
+                        <h2 id="panelTitle">Reporting Manager Dashboard</h2>
+                        <p id="panelSub">Your reporting team overview</p>
                     </div>
                 </div>
                 <div class="tb-r">
@@ -813,18 +813,18 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxyWYhkxufapNkEnnt33vZ3Q5tumCraRoq5PJGxFgJOY-KoUmxXOX4wte6n2zC820JRlQ/exec";
         const TIMEOUT_MS = 30000;
         const ALLOWED_DOMAINS = ['@dashverse.ai', '@dashversemail.com', '@dashtoon.com'];
-        const ROLE_PASSWORDS = { manager: 'manager@123' };
+        const ROLE_PASSWORDS = { manager: 'manager@123', reporting: 'reporting@123' };
 
         const PANEL_META = {
-            dash: ['Manager Dashboard', 'Your team overview'],
-            team: ['My Team Members', 'All employees assigned to you'],
+            dash: ['Reporting Manager Dashboard', 'Your reporting team overview'],
+            team: ['My Reporting Team', 'Employees assigned to you as reporting manager'],
             today: ["Today's Team Status", 'Present, absent & on leave'],
             pending: ['Pending Approvals', 'Leave requests awaiting your decision'],
-            allleaves: ['Team Leave History', 'All leave records for your team'],
-            att: ['Team Attendance Log', 'Attendance records for your team']
+            allleaves: ['Reporting Team Leave History', 'All leave records for your reporting team'],
+            att: ['Reporting Team Attendance Log', 'Attendance records for your reporting team']
         };
 
-        let myEmail='', myName='', myRole='', selRoleTab='manager';
+        let myEmail='', myName='', myRole='', selRoleTab='reporting';
         let allEmp=[], allAtt=[], allLv=[], myTeam=[], myTeamAtt=[], myTeamLv=[];
         let confCb=null, isLive=false, dataLoaded=false;
 
@@ -881,13 +881,14 @@
         function extractTime(val){if(!val)return'--';const s=String(val).trim();const iso=s.match(/T(\d{2}):(\d{2})(?::(\d{2}))?/);if(iso){let h=parseInt(iso[1],10),m=iso[2];const ap=h>=12?'PM':'AM';h=h%12||12;return`${h}:${m} ${ap}`;}const plain=s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i);if(plain){let h=parseInt(plain[1],10),m=plain[2];let ap=(plain[3]||'').toUpperCase();if(!ap){ap=h>=12?'PM':'AM';h=h%12||12;}return`${h}:${m} ${ap}`;}return'--';}
         const todayStr=()=>new Date().toISOString().split('T')[0];
 
+        function setRoleTab(role){selRoleTab=role;document.querySelectorAll('.role-tab').forEach(t=>t.classList.remove('on'));document.getElementById('rt-'+role)?.classList.add('on');}
         function togglePw(){const inp=document.getElementById('mgrPass');const btn=document.getElementById('pwToggle');if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}else{inp.type='password';btn.textContent='👁️';}}
 
         document.addEventListener('DOMContentLoaded',()=>{
             document.getElementById('mgrEmail').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('mgrPass').focus();});
             document.getElementById('mgrPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
             checkConn();ticker();setInterval(ticker,1000);
-            try{const saved=sessionStorage.getItem('mgrSession');if(saved){const s=JSON.parse(saved);if(s.email&&s.role==='manager'&&s.name){myEmail=s.email;myRole=s.role;myName=s.name;document.getElementById('loginPg').style.display='none';document.getElementById('mgrApp').classList.add('on');setTimeout(initApp,100);}}}catch{}
+            try{const saved=sessionStorage.getItem('reportingSession');if(saved){const s=JSON.parse(saved);if(s.email&&s.role==='reporting'&&s.name){myEmail=s.email;myRole=s.role;myName=s.name;document.getElementById('loginPg').style.display='none';document.getElementById('mgrApp').classList.add('on');setTimeout(initApp,100);}}}catch{}
         });
 
         async function checkConn(){
@@ -901,24 +902,24 @@
         async function doLogin(){
             const email=document.getElementById('mgrEmail').value.trim().toLowerCase();const pass=document.getElementById('mgrPass').value.trim();const role=selRoleTab;
             if(!email){loginMsg('⚠️ Enter your work email address','warn');return;}if(!isValidEmail(email)){loginMsg('⚠️ Invalid email format','warn');return;}if(!isDashverseEmail(email)){loginMsg(`⚠️ Only @dashverse.ai, @dashversemail.com, or @dashtoon.com email addresses are accepted.`,'err');return;}if(!pass){loginMsg('⚠️ Enter your password','warn');return;}
-            if(pass!==ROLE_PASSWORDS[role]){loginMsg('❌ Incorrect password for Manager role','err');return;}
+            if(pass!==ROLE_PASSWORDS[role]){loginMsg(`❌ Incorrect password for ${role==='reporting'?'Reporting Manager':'Manager'} role`,'err');return;}
             const btn=document.getElementById('loginBtn');btn.innerHTML='<div class="spin"></div> Verifying...';btn.disabled=true;
             const valRes=await callAPI('validateManagerProfile',{email:email,role:role},true);
-            if(!valRes.success){btn.innerHTML='🔐 Access Manager Portal';btn.disabled=false;loginMsg(`❌ ${valRes.message}`,'err');return;}
+            if(!valRes.success){btn.innerHTML='Access Reporting Manager Portal';btn.disabled=false;loginMsg(`❌ ${valRes.message}`,'err');return;}
             const mgrFound=valRes.manager;
-            const empRes=await callAPI('getEmployees',{},true);btn.innerHTML='🔐 Access Manager Portal';btn.disabled=false;
+            const empRes=await callAPI('getEmployees',{},true);btn.innerHTML='Access Reporting Manager Portal';btn.disabled=false;
             if(!empRes.success){loginMsg('❌ Could not load employee data.','err');return;}
             const emps=empRes.employees||[];
-            const teamMembers=emps.filter(e=>{const mE=(e.managerEmail||'').toLowerCase().trim();const mN=(e.manager||'').toLowerCase().trim();return mE===email||mN===email;});
+            const teamMembers=emps.filter(e=>{if(role==='manager'){const mE=(e.managerEmail||'').toLowerCase().trim();const mN=(e.manager||'').toLowerCase().trim();return mE===email||mN===email;}if(role==='reporting'){const rE=(e.reportingManagerEmail||'').toLowerCase().trim();const rN=(e.reportingManager||'').toLowerCase().trim();return rE===email||rN===email;}return false;});
             const selfEmp=emps.find(e=>e.email?.toLowerCase()===email);let finalTeam=teamMembers;
-            if(finalTeam.length===0&&selfEmp){const myNameFallback=selfEmp.name?.trim().toLowerCase()||'';if(myNameFallback){finalTeam=emps.filter(e=>(e.manager||'').trim().toLowerCase()===myNameFallback);}}
-            if(finalTeam.length===0&&emps.length>0){loginMsg('⚠️ No employees found under your Manager assignment. You can view reports when employees are assigned to you.','warn');}
+            if(finalTeam.length===0&&selfEmp){const myNameFallback=selfEmp.name?.trim().toLowerCase()||'';if(myNameFallback){finalTeam=emps.filter(e=>{if(role==='manager')return(e.manager||'').trim().toLowerCase()===myNameFallback;if(role==='reporting')return(e.reportingManager||'').trim().toLowerCase()===myNameFallback;return false;});}}
+            if(finalTeam.length===0&&emps.length>0){loginMsg(`⚠️ No employees found under your ${role==='reporting'?'Reporting Manager':'Manager'} assignment. You can view reports when employees are assigned to you.`,'warn');}
             myEmail=email;myRole=role;myName=selfEmp?.name||mgrFound?.name||email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase());
-            sessionStorage.setItem('mgrSession',JSON.stringify({email:myEmail,role:myRole,name:myName}));
+            sessionStorage.setItem('reportingSession',JSON.stringify({email:myEmail,role:myRole,name:myName}));
             document.getElementById('loginPg').style.display='none';document.getElementById('mgrApp').classList.add('on');initApp();toast('👋 Welcome!',`Hello, ${myName}!`,'ok');if(navigator.vibrate)navigator.vibrate([30,20,30]);
         }
 
-        function logout(){sessionStorage.removeItem('mgrSession');clearCache();dataLoaded=false;document.getElementById('loginPg').style.display='flex';document.getElementById('mgrApp').classList.remove('on');document.getElementById('mgrEmail').value='';document.getElementById('mgrPass').value='';myEmail='';myRole='';myName='';allEmp=[];allAtt=[];allLv=[];myTeam=[];myTeamAtt=[];myTeamLv=[];checkConn();}
+        function logout(){sessionStorage.removeItem('reportingSession');clearCache();dataLoaded=false;document.getElementById('loginPg').style.display='flex';document.getElementById('mgrApp').classList.remove('on');document.getElementById('mgrEmail').value='';document.getElementById('mgrPass').value='';myEmail='';myRole='';myName='';allEmp=[];allAtt=[];allLv=[];myTeam=[];myTeamAtt=[];myTeamLv=[];checkConn();}
 
         function goPortal(dest, isHome){
             try{
@@ -934,7 +935,7 @@
         function loginMsg(msg,type){const cls={ok:'al-ok',err:'al-err',warn:'al-warn',info:'al-info'};document.getElementById('loginAlert').innerHTML=`<div class="alert ${cls[type]}">${msg}</div>`;setTimeout(()=>{const el=document.getElementById('loginAlert');if(el)el.innerHTML=''},6000);}
         function initApp(){document.getElementById('todayDateLbl').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});updateSidebarUser();if(!dataLoaded)loadAll();initDateButtonListeners();}
         function initDateButtonListeners(){document.querySelectorAll('input[type="date"]').forEach(input=>{if(input.dataset.dateBtnInit==='1')return;const openPicker=()=>{if(typeof input.showPicker==='function')input.showPicker();};input.setAttribute('inputmode','none');input.addEventListener('pointerdown',e=>{e.preventDefault();openPicker();});input.addEventListener('keydown',e=>{e.preventDefault();});input.dataset.dateBtnInit='1';})};
-        function updateSidebarUser(){document.getElementById('sbAv').textContent=ini(myName);document.getElementById('sbUserName').textContent=myName;document.getElementById('sbUserEmail').textContent=myEmail;document.getElementById('sbUserRole').textContent='👔 Manager';}
+        function updateSidebarUser(){const roleLabel=myRole==='reporting'?'📊 Reporting Manager':'👔 Manager';document.getElementById('sbAv').textContent=ini(myName);document.getElementById('sbUserName').textContent=myName;document.getElementById('sbUserEmail').textContent=myEmail;document.getElementById('sbUserRole').textContent=roleLabel;}
         function openSB(){document.getElementById('sb').classList.add('open');document.getElementById('sbOverlay').classList.add('on');document.body.style.overflow='hidden';}
         function closeSB(){document.getElementById('sb').classList.remove('open');document.getElementById('sbOverlay').classList.remove('on');document.body.style.overflow='';}
 
@@ -1098,7 +1099,7 @@
 
         function filterMyTeam(){
             const emailLow=myEmail.toLowerCase(),nameLow=myName.toLowerCase();
-            myTeam=allEmp.filter(e=>{const mE=(e.managerEmail||'').trim().toLowerCase(),mN=(e.manager||'').trim().toLowerCase();return mE===emailLow||mN===emailLow||mN===nameLow;});
+            myTeam=allEmp.filter(e=>{if(myRole==='manager'){const mE=(e.managerEmail||'').trim().toLowerCase(),mN=(e.manager||'').trim().toLowerCase();return mE===emailLow||mN===emailLow||mN===nameLow;}if(myRole==='reporting'){const rE=(e.reportingManagerEmail||'').trim().toLowerCase(),rN=(e.reportingManager||'').trim().toLowerCase();return rE===emailLow||rN===emailLow||rN===nameLow;}return false;});
             const teamEmails=new Set(myTeam.map(e=>e.email?.toLowerCase()));
             myTeamAtt=allAtt.filter(a=>teamEmails.has(a.email?.toLowerCase()));myTeamLv=allLv.filter(l=>teamEmails.has(l.email?.toLowerCase()));
             const cnt=myTeam.length;document.getElementById('sbTeamCount').textContent=`Team: ${cnt} member${cnt!==1?'s':''}`;
@@ -1142,7 +1143,7 @@
         function renderTeam(){
             const srch=(document.getElementById('teamSrch')?.value||'').toLowerCase();const filtered=myTeam.filter(e=>!srch||`${e.name} ${e.email} ${e.role||''} ${e.department||''}`.toLowerCase().includes(srch));
             document.getElementById('teamCount').textContent=`${myTeam.length} member${myTeam.length!==1?'s':''}`;
-            if(!myTeam.length){document.getElementById('teamGrid').innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="ei">👥</div><h3>No team members found</h3><p>Ask HR to enter your email <strong>${myEmail}</strong> in the <strong>Manager Email</strong> field of each employee.</p></div>`;document.getElementById('teamAlerts').innerHTML=`<div class="alert al-info">ℹ️ No team members assigned. HR must enter your email <strong>${myEmail}</strong> in the Manager Email field.</div>`;return;}
+            if(!myTeam.length){document.getElementById('teamGrid').innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="ei">👥</div><h3>No team members found</h3><p>Ask HR to enter your email <strong>${myEmail}</strong> in the <strong>${myRole==='reporting'?'Reporting Manager Email':'Manager Email'}</strong> field of each employee.</p></div>`;document.getElementById('teamAlerts').innerHTML=`<div class="alert al-info">ℹ️ No team members assigned. HR must enter your email <strong>${myEmail}</strong> in the ${myRole==='reporting'?'Reporting Manager Email':'Manager Email'} field.</div>`;return;}
             document.getElementById('teamAlerts').innerHTML='';
             if(!filtered.length){document.getElementById('teamGrid').innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="ei">🔍</div><h3>No matching members</h3></div>`;return;}
             const today=todayStr();const presentEmails=new Set(myTeamAtt.filter(a=>(a.date||'').toString().substring(0,10)===today).map(a=>a.email?.toLowerCase()));
@@ -1415,3 +1416,5 @@
 </script>
 </body>
 </html>
+
+
