@@ -541,8 +541,9 @@ function applyEmployeeStatusCellStyle(sheet, rowNumber, hdr, status) {
 
 function getAttendanceColorInfo(dateValue) {
   const checkInDate = dateValue instanceof Date && !isNaN(dateValue.getTime()) ? dateValue : new Date();
-  const hour = checkInDate.getHours();
-  if (hour < 14) {
+  const tz = Session.getScriptTimeZone();
+  const hour = parseInt(Utilities.formatDate(checkInDate, tz, 'H'), 10);
+  if (hour < 17) {
     return {
       attendanceColor: 'green',
       rowBackground: '#d4edda',
@@ -550,7 +551,7 @@ function getAttendanceColorInfo(dateValue) {
       timeFontColor: '#ffffff'
     };
   }
-  if (hour < 17) {
+  if (hour < 19) {
     return {
       attendanceColor: 'yellow',
       rowBackground: '#fff3cd',
@@ -574,8 +575,8 @@ function getAttendanceColorFromRecordedValue(attendanceColor, checkInValue) {
 
   const hour = parseTimeTo24Hour(checkInValue);
   if (hour === null) return 'green';
-  if (hour < 14) return 'green';
-  if (hour < 17) return 'yellow';
+  if (hour < 17) return 'green';
+  if (hour < 19) return 'yellow';
   return 'red';
 }
 
@@ -1573,30 +1574,6 @@ function handleMarkAttendance(data) {
     }
 
     const aHdr = getAttHeaders(sheet);
-    const lastRow = sheet.getLastRow();
-    if (lastRow > 1) {
-      const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
-      const emailIndex = aHdr['email'] !== undefined ? aHdr['email'] : 2;
-      const dateIndex = aHdr['date'] !== undefined ? aHdr['date'] : 6;
-      const checkInIndex = aHdr['checkintime'] !== undefined ? aHdr['checkintime'] : 7;
-      const colorIndex = aHdr['attendancecolor'] !== undefined ? aHdr['attendancecolor'] : -1;
-
-      for (let i = 0; i < rows.length; i++) {
-        const rowEmail = normalizeEmail(rows[i][emailIndex]);
-        const rowDate = formatSheetDate(rows[i][dateIndex]) || String(rows[i][dateIndex] || '').substring(0, 10);
-        if (rowEmail === email && rowDate === today) {
-          const recordedTime = rows[i][checkInIndex] || timeStr;
-          const recordedColor = colorIndex >= 0 ? rows[i][colorIndex] : '';
-          return {
-            success: true,
-            message: 'Already marked present today',
-            time: recordedTime,
-            date: today,
-            attendanceColor: getAttendanceColorFromRecordedValue(recordedColor, recordedTime)
-          };
-        }
-      }
-    }
 
     const totalCols = sheet.getLastColumn();
     const newRow = new Array(totalCols).fill('');

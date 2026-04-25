@@ -209,14 +209,6 @@
         .spin { width:18px; height:18px; border:3px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:sp .75s linear infinite; display:inline-block; flex-shrink:0; }
         @keyframes sp { from{transform:rotate(0)} to{transform:rotate(360deg)} }
 
-        /* ATTENDANCE TIME COLOR BADGES */
-        .att-time-green { color:#059669; font-weight:800; }
-        .att-time-yellow { color:#d97706; font-weight:800; }
-        .att-time-red { color:#dc2626; font-weight:800; }
-        [data-theme="dark"] .att-time-green { color:#10b981; }
-        [data-theme="dark"] .att-time-yellow { color:#f59e0b; }
-        [data-theme="dark"] .att-time-red { color:#ef4444; }
-
         /* PROFILE CARD */
         .prof-outer { background:var(--card); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); border:1px solid var(--gb); border-radius:var(--r); overflow:visible; transition:var(--tr-3d); transform-style:preserve-3d; animation:shard-in 0.6s cubic-bezier(0.68,-0.55,0.27,1.55) forwards; box-shadow:var(--sh); margin-bottom:20px; position:relative; }
         .prof-banner { height:100px; background:linear-gradient(125deg,#c026d3 0%,#7c3aed 42%,#22d3ee 100%); border-radius:var(--r) var(--r) 0 0; position:relative; overflow:hidden; }
@@ -364,12 +356,14 @@
         .absent-warn-box.on { display:block; }
         .awb-head { display:flex; align-items:center; gap:7px; font-size:.86rem; font-weight:800; color:#dc2626; margin-bottom:5px; }
         .awb-body { font-size:.77rem; color:rgba(220,38,38,.8); line-height:1.55; }
-        .hl { max-height:280px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+        .hl { max-height:340px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
         .hl::-webkit-scrollbar { width:3px; }
         .hl::-webkit-scrollbar-thumb { background:var(--p); border-radius:2px; }
-        .hi { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:var(--rs); margin-bottom:6px; background:var(--item-bg); border:1px solid var(--item-border); transition:var(--tr); }
+        .hi { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-radius:var(--rs); margin-bottom:8px; background:var(--item-bg); border:1px solid var(--item-border); transition:var(--tr); }
         .hi:hover { border-color:rgba(232,121,249,.3); }
-        .hi-time { font-size:.76rem; font-weight:600; }
+        .hi-date { font-size:.84rem; font-weight:700; color:var(--txt); }
+        .hi-time { font-size:.78rem; font-weight:600; color:var(--p); margin-top:2px; }
+        .hi-proj { font-size:.71rem; color:var(--muted); margin-top:3px; }
 
         /* LEAVE */
         .lv-item { background:var(--item-bg); border:1px solid var(--item-border); border-radius:var(--rs); padding:13px; margin-bottom:9px; }
@@ -786,9 +780,6 @@
                             <div class="awb-body" id="absentWarnBody"></div>
                         </div>
                         <div class="sec-title">📅 Recent Records</div>
-                        <div style="margin-bottom:10px;font-size:.74rem;color:var(--muted);">
-                            🟢 On-time (00:00–13:59) &nbsp; 🟡 Late (14:00–16:59) &nbsp; 🔴 Very Late (17:00–23:59)
-                        </div>
                         <div class="hl" id="attHist">
                             <div class="empty-state"><div class="ei">📭</div><p>No records yet</p></div>
                         </div>
@@ -838,45 +829,87 @@
     const POLICY = { YEARLY_LIMIT:18, MONTHLY_LIMIT:2, ABSENT_WARN_THRESHOLD:2 };
     const ADMIN_ONLY_FIELDS = ['employmentType','contractStartDate','contractEndDate','contractTotalDays','noticePeriod','renewalNotes'];
 
-    // Attendance time color thresholds (24h)
-    // 00:00-13:59 = GREEN, 14:00-16:59 = YELLOW, 17:00-23:59 = RED
-    function getAttendanceTimeColor(checkInValue) {
-        if (!checkInValue) return 'normal';
-        const s = String(checkInValue).trim();
-        let hour = -1;
-        // Try ISO format
-        const iso = s.match(/T(\d{2}):/);
-        if (iso) { hour = parseInt(iso[1], 10); }
-        else {
-            // Try HH:MM AM/PM
-            const match = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i);
-            if (match) {
-                hour = parseInt(match[1], 10);
-                const ap = (match[3] || '').toUpperCase();
-                if (ap === 'PM' && hour !== 12) hour += 12;
-                if (ap === 'AM' && hour === 12) hour = 0;
+    // ===== TIME PARSING (FIXED - NO TIMEZONE ISSUES) =====
+    /**
+     * Parse time string from Google Sheets into hours (24h float).
+     * Handles: "18:29:00", "06:29 PM", "18:29", ISO strings, etc.
+     * Returns hour as float (e.g., 18.483 for 18:29).
+     */
+    function parseTimeToHour(timeVal) {
+        if (!timeVal) return -1;
+        const s = String(timeVal).trim();
+
+        // Format: HH:MM:SS or HH:MM (24-hour, no AM/PM) - from Google Sheets
+        const match24 = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+        if (match24) {
+            return parseInt(match24[1], 10) + parseInt(match24[2], 10) / 60;
+        }
+
+        // Format: HH:MM AM/PM or HH:MM:SS AM/PM
+        const match12 = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i);
+        if (match12) {
+            let h = parseInt(match12[1], 10);
+            const m = parseInt(match12[2], 10);
+            const ap = match12[3].toUpperCase();
+            if (ap === 'PM' && h !== 12) h += 12;
+            if (ap === 'AM' && h === 12) h = 0;
+            return h + m / 60;
+        }
+
+        // ISO format - use LOCAL time (not UTC) to match what was stored
+        if (s.includes('T')) {
+            // Try parsing as local date
+            const parts = s.match(/T(\d{2}):(\d{2})(?::(\d{2}))?/);
+            if (parts) {
+                // This is UTC time in ISO, convert to local
+                const d = new Date(s);
+                if (!isNaN(d.getTime())) {
+                    return d.getHours() + d.getMinutes() / 60;
+                }
             }
         }
-        if (hour < 0) return 'normal';
-        if (hour < 14) return 'green';   // 00:00-13:59
-        if (hour < 17) return 'yellow';  // 14:00-16:59
-        return 'red';                     // 17:00-23:59
+
+        return -1;
     }
 
-    function getTimeColorClass(checkInValue) {
-        const color = getAttendanceTimeColor(checkInValue);
-        if (color === 'green') return 'att-time-green';
-        if (color === 'yellow') return 'att-time-yellow';
-        if (color === 'red') return 'att-time-red';
-        return '';
-    }
+    /**
+     * Format a time value to display string (e.g., "6:29 PM")
+     * Handles Google Sheets time formats correctly.
+     */
+    function formatTimeDisplay(timeVal) {
+        if (!timeVal) return '--';
+        const s = String(timeVal).trim();
 
-    function getTimeColorEmoji(checkInValue) {
-        const color = getAttendanceTimeColor(checkInValue);
-        if (color === 'green') return '🟢';
-        if (color === 'yellow') return '🟡';
-        if (color === 'red') return '🔴';
-        return '';
+        // Already formatted as HH:MM AM/PM
+        const match12 = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i);
+        if (match12) {
+            return `${match12[1]}:${match12[2]} ${match12[3].toUpperCase()}`;
+        }
+
+        // 24-hour format HH:MM:SS or HH:MM - convert to 12h
+        const match24 = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+        if (match24) {
+            let h = parseInt(match24[1], 10);
+            const m = match24[2];
+            const ap = h >= 12 ? 'PM' : 'AM';
+            if (h > 12) h -= 12;
+            if (h === 0) h = 12;
+            return `${h}:${m} ${ap}`;
+        }
+
+        // ISO format - convert to local time display
+        if (s.includes('T') || s.includes('-')) {
+            const d = new Date(s);
+            if (!isNaN(d.getTime())) {
+                return d.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            }
+        }
+
+        return s || '--';
     }
 
     const PORTAL_CONFIG = {
@@ -903,14 +936,6 @@
 
     function stripAdminFields(e){if(!e)return e;const c={...e};ADMIN_ONLY_FIELDS.forEach(f=>delete c[f]);return c;}
 
-    function extractTime(val){
-        if(!val)return'--';const s=String(val).trim();
-        const iso=s.match(/T(\d{2}):(\d{2})(?::(\d{2}))?/);
-        if(iso){let h=parseInt(iso[1],10),m=iso[2];const ap=h>=12?'PM':'AM';h=h%12||12;return`${h}:${m} ${ap}`;}
-        const plain=s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i);
-        if(plain){let h=parseInt(plain[1],10),m=plain[2];let ap=(plain[3]||'').toUpperCase();if(!ap){ap=h>=12?'PM':'AM';h=h%12||12;}return`${h}:${m} ${ap}`;}
-        return'--';
-    }
     function safeParseDate(val){
         if(!val)return null;const s=String(val).trim();
         if(s.startsWith('1899-12-30'))return null;
@@ -929,15 +954,11 @@
         }
         if(action==='markAttendance'){
             const atts=lsGet(LS.ATT),today=todayStr();
-            const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
-            const color=getAttendanceTimeColor(new Date().toISOString());
-            const rec={...data,date:today,checkIn:ts,checkInRaw:new Date().toISOString(),attendanceColor:color,status:'Present',recordId:'ATT'+Date.now()};
+            const now=new Date();
+            const ts=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+            const rec={...data,date:today,checkIn:ts,attendanceColor:'',status:'Present',recordId:'ATT'+Date.now()};
             delete rec.action;atts.push(rec);lsSet(LS.ATT,atts);
-            return{success:true,message:'Attendance marked!',time:ts,date:today,attendanceColor:color};
-        }
-        if(action==='checkLoginBeforeCutoff'){
-            // In local mode, always allow since we removed the cutoff
-            return{success:true,loggedBefore15:true,canLogin:true};
+            return{success:true,message:'Attendance marked!',time:ts,date:today};
         }
         if(action==='getAttendance')return{success:true,attendance:lsGet(LS.ATT).filter(a=>a.email?.toLowerCase()===(data.email||'').toLowerCase())};
         if(action==='applyLeave'){const lvs=lsGet(LS.LV);const lv={...data,id:'LV'+Date.now(),status:'Pending',appliedOn:new Date().toISOString(),approvedBy:'',rejectedBy:'',rejectionReason:''};delete lv.action;lvs.push(lv);lsSet(LS.LV,lvs);return{success:true,message:'Leave applied!'};}
@@ -1228,6 +1249,7 @@
         const pg=document.getElementById('pgLoading');pg.style.display='none';
         [0,1,2,3].forEach(i=>{const s=document.getElementById('lstep'+i);if(s)s.classList.add('done');});
     }
+
     async function fetchEmployee(){
         const email=document.getElementById('emailInp').value.trim();
         if(!email){showAlert('emailAlerts','⚠️ Please enter your email address','warn');shake();return;}
@@ -1256,7 +1278,6 @@
                 renderAttHist();
                 renderLvHist();
                 initEmpProjectDropdown();
-                // Handle inactive employees
                 setupForEmployeeStatus();
                 toast('👋 Welcome!',`Hello, ${emp.name}!`,'ok');
                 if(navigator.vibrate)navigator.vibrate(30);
@@ -1272,7 +1293,6 @@
     function setupForEmployeeStatus(){
         const isActive=isEmployeeActive();
         const inactiveMsg=document.getElementById('inactiveMsg');
-        const profOuter=document.getElementById('profOuter');
         const markBtn=document.getElementById('markBtn');
         const leaveBtn=document.querySelector('.btn-leave-full');
         const statusBadge=document.getElementById('empStatusBadge');
@@ -1321,29 +1341,38 @@
         ];
         document.getElementById('infoGrid').innerHTML=items.map(([ic,lbl,val])=>`<div class="info-item" title="${val}"><div class="info-lbl">${ic} ${lbl}</div><div class="info-val">${val}</div></div>`).join('');
     }
+
     function checkTodayMark(list){
         const today=todayStr();
-        const sorted=[...list].sort((a,b)=>{const da=safeParseDate(a.date),db=safeParseDate(b.date);return(db?.getTime()||0)-(da?.getTime()||0);});
-        const rec=sorted.find(a=>safeDateStr(a.date)===today);
-        if(rec){
+        const todayRecs=[...list].filter(a=>{
+            const ds=safeDateStr(a.date);
+            return ds===today;
+        }).sort((a,b)=>{
+            // Sort by actual time value for correct latest detection
+            const ha=parseTimeToHour(a.checkIn);
+            const hb=parseTimeToHour(b.checkIn);
+            return hb-ha;
+        });
+
+        if(todayRecs.length>0){
             marked=true;
-            const timeStr=extractTime(rec.checkIn)||extractTime(rec.checkInTime)||'--';
-            const colorCls=getTimeColorClass(rec.checkInRaw||rec.checkIn);
-            const emoji=getTimeColorEmoji(rec.checkInRaw||rec.checkIn);
-            setMarked(timeStr,colorCls,emoji);
-            showAlert('dashAlerts',`${emoji} Already marked present today at <strong class="${colorCls}">${timeStr}</strong>`,'ok');
+            const rec=todayRecs[0];
+            const timeDisplay=formatTimeDisplay(rec.checkIn);
+            setMarked(timeDisplay);
+            const countMsg=todayRecs.length>1?` (${todayRecs.length} logins today)`:'';
+            showAlert('dashAlerts',`✅ Last marked present today at <strong>${timeDisplay}</strong>${countMsg}`,'ok');
         }else{
             marked=false;
             document.getElementById('todaySts').innerHTML=`<div class="sts-badge sts-no"><div class="sts-dot"></div>Not Marked</div>`;
         }
     }
-    function setMarked(latestTime,colorCls,emoji){
+
+    function setMarked(latestTime){
         const btn=document.getElementById('markBtn');
         btn.disabled=false;
         const t=(latestTime||'').toString().trim();
-        const e=emoji||'✅';
-        btn.innerHTML=t?`${e} Mark Again (${t})`:'✅ Mark Attendance Again';
-        document.getElementById('todaySts').innerHTML=`<div class="sts-badge sts-ok"><div class="sts-dot"></div>Present Today${t?` • <strong class="${colorCls||''}">${t}</strong>`:''}</div>`;
+        btn.innerHTML=t?`✅ Mark Again (${t})`:'✅ Mark Attendance Again';
+        document.getElementById('todaySts').innerHTML=`<div class="sts-badge sts-ok"><div class="sts-dot"></div>Present Today${t?` • <strong>${t}</strong>`:''}</div>`;
     }
 
     async function markAttendance(){
@@ -1360,18 +1389,21 @@
         }
         const btn=document.getElementById('markBtn');
         const now=new Date();
-        const ts=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+        // Get current time as local 12h string for display
+        const tsDisplay=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
         const rawTs=now.toISOString();
-        const colorCode=getAttendanceTimeColor(rawTs);
-        const colorCls=getTimeColorClass(rawTs);
-        const emoji=getTimeColorEmoji(rawTs);
 
         btn.innerHTML=`<div class="spin"></div> Marking...`;btn.disabled=true;
         marked=true;
 
-        const optRec={email:emp.email,name:emp.name,department:emp.department,currentProject:selectedProj||emp.currentProject||'',date:todayStr(),checkIn:ts,checkInRaw:rawTs,attendanceColor:colorCode,status:'Present',recordId:'OPT'+Date.now()};
+        const optRec={
+            email:emp.email,name:emp.name,department:emp.department,
+            currentProject:selectedProj||emp.currentProject||'',
+            date:todayStr(),checkIn:tsDisplay,
+            status:'Present',recordId:'OPT'+Date.now()
+        };
         attData.unshift(optRec);renderAttHist();
-        showAlert('dashAlerts',`⏳ Submitting at ${ts}...`,'info');
+        showAlert('dashAlerts',`⏳ Submitting at ${tsDisplay}...`,'info');
         if(navigator.vibrate)navigator.vibrate(50);
 
         const res=await callAPI('markAttendance',{
@@ -1379,30 +1411,22 @@
             department:emp.department||'',
             currentProject:selectedProj||emp.currentProject||'',
             location:'Office',
-            checkInTime:rawTs,
-            attendanceColor:colorCode
+            checkInTime:rawTs
         });
         CACHE.clear('getAttendance_'+emp.email);
 
         if(res.success){
-            const confirmedTime=extractTime(res.time)||ts;
-            const confirmedColor=res.attendanceColor||colorCode;
-            const confirmedColorCls=confirmedColor==='green'?'att-time-green':confirmedColor==='yellow'?'att-time-yellow':confirmedColor==='red'?'att-time-red':'';
-            const confirmedEmoji=confirmedColor==='green'?'🟢':confirmedColor==='yellow'?'🟡':confirmedColor==='red'?'🔴':'✅';
-            const alreadyMarked=(res.message||'').toLowerCase().includes('already marked');
-            if(alreadyMarked){
-                const idx=attData.indexOf(optRec);if(idx>-1)attData.splice(idx,1);
-            }else{
-                optRec.checkIn=confirmedTime;
-                optRec.attendanceColor=confirmedColor;
-            }
-            setMarked(confirmedTime,confirmedColorCls,confirmedEmoji);
-            showAlert('dashAlerts',alreadyMarked?`${confirmedEmoji} Already marked present today at <strong class="${confirmedColorCls}">${confirmedTime}</strong>`:`${confirmedEmoji} Marked at <strong class="${confirmedColorCls}">${confirmedTime}</strong>${selectedProj?` • 🎬 ${selectedProj}`:''}` ,'ok');
-            showSuc(alreadyMarked?`${confirmedEmoji} Already Marked`: `${confirmedEmoji} Attendance Marked!`,alreadyMarked?`${emp.name}, you were already marked present at ${confirmedTime}`:`${emp.name}, you're marked present at ${confirmedTime}`);
-            if(!alreadyMarked)confetti();renderAttHist();
-            toast(alreadyMarked?`${confirmedEmoji} Already Marked`:`${confirmedEmoji} Marked!`,`Present at ${confirmedTime}`,confirmedColor==='green'?'ok':confirmedColor==='yellow'?'warn':'err');
+            // Use the time returned from server or our local display time
+            const confirmedTime = res.time ? formatTimeDisplay(res.time) : tsDisplay;
+            optRec.checkIn=confirmedTime;
+            setMarked(confirmedTime);
+            const todayCount=attData.filter(a=>safeDateStr(a.date)===todayStr()).length;
+            showAlert('dashAlerts',`✅ Marked present at <strong>${confirmedTime}</strong>${selectedProj?` • 🎬 ${selectedProj}`:''}${todayCount>1?` • Login #${todayCount} today`:''}`,'ok');
+            showSuc(`✅ Attendance Marked!`,`${emp.name}, you're marked present at ${confirmedTime}`);
+            confetti();renderAttHist();
+            toast(`✅ Marked!`,`Present at ${confirmedTime}`,'ok');
             if(navigator.vibrate)navigator.vibrate([50,30,50]);
-            if(!alreadyMarked&&selectedProj&&selectedProj!==emp.currentProject){
+            if(selectedProj&&selectedProj!==emp.currentProject){
                 callAPI('assignProject',{email:emp.email,project:selectedProj}).catch(()=>{});
                 emp.currentProject=selectedProj;
             }
@@ -1430,25 +1454,30 @@
         if(cAb)cAb.textContent=absentDays;
         if(cLv)cLv.textContent=monthLv.length;
         updateAbsentWarning(absentDays);
+
         const valid=attData.filter(a=>safeDateStr(a.date));
         const c=document.getElementById('attHist');
-        if(!valid.length){c.innerHTML=`<div class="empty-state"><div class="ei">📭</div><p>No records yet</p></div>`;return;}
+        if(!valid.length){
+            c.innerHTML=`<div class="empty-state"><div class="ei">📭</div><p>No records yet</p></div>`;
+            return;
+        }
+
         const sorted=[...valid].sort((a,b)=>new Date(safeDateStr(b.date))-new Date(safeDateStr(a.date)));
+
         c.innerHTML=sorted.slice(0,30).map(r=>{
-            const checkInRaw=r.checkInRaw||r.checkIn;
-            const colorCls=getTimeColorClass(checkInRaw);
-            const emoji=getTimeColorEmoji(checkInRaw);
-            const color=getAttendanceTimeColor(checkInRaw);
-            const colorLabel=color==='green'?'On-time':color==='yellow'?'Late':'Very Late';
-            return`<div class="hi">
+            // Format time correctly - no color dots shown to employee
+            const timeDisplay = formatTimeDisplay(r.checkIn);
+
+            return `<div class="hi">
                 <div>
-                    <div style="font-weight:600;font-size:.86rem;color:var(--txt);">${fmtDate(r.date)}</div>
-                    <div class="hi-time ${colorCls}">${emoji} ${extractTime(r.checkIn)}</div>
-                    ${r.currentProject?`<div style="font-size:.72rem;color:var(--p);margin-top:2px;">🎬 ${r.currentProject}</div>`:''}
+                    <div class="hi-date">${fmtDate(r.date)}</div>
+                    <div class="hi-time">🕐 ${timeDisplay}</div>
+                    ${r.currentProject ? `<div class="hi-proj">🎬 ${r.currentProject}</div>` : ''}
                 </div>
-                <div style="display:flex;align-items:center;gap:7px;">
-                    <span style="font-size:.68rem;color:var(--muted);">${colorLabel}</span>
-                    <div class="sts-badge sts-ok" style="padding:2px 8px;font-size:.66rem;"><div class="sts-dot"></div>Present</div>
+                <div style="display:flex;align-items:center;">
+                    <div class="sts-badge sts-ok" style="padding:3px 10px;font-size:.68rem;">
+                        <div class="sts-dot"></div>Present
+                    </div>
                 </div>
             </div>`;
         }).join('');
@@ -1460,7 +1489,18 @@
         const sorted=[...lvData].sort((a,b)=>{const da=safeParseDate(a.appliedOn),db=safeParseDate(b.appliedOn);return(db?.getTime()||0)-(da?.getTime()||0);});
         c.innerHTML=sorted.map(l=>{
             const bc=l.status==='Approved'?'bd-ok':l.status==='Rejected'?'bd-rej':'bd-pend';
-            return`<div class="lv-item"><div class="lv-hdr"><span class="lv-type">${l.leaveType||'N/A'}</span><span class="badge ${bc}">${l.status}</span></div><div class="lv-dates">📅 ${fmtDate(l.fromDate)} → ${fmtDate(l.toDate)} • <strong>${l.days||1} day${(l.days||1)>1?'s':''}</strong></div><div class="lv-rsn">📝 ${l.reason||'N/A'}</div>${l.status==='Approved'&&l.approvedBy?`<div style="font-size:.69rem;color:var(--muted);margin-top:5px;">Accepted by: ${l.approvedBy}</div>`:''}${l.status==='Rejected'&&l.rejectedBy?`<div style="font-size:.69rem;color:var(--muted);margin-top:5px;">Rejected by: ${l.rejectedBy}</div>`:''}${l.status==='Rejected'&&l.rejectionReason?`<div style="font-size:.69rem;color:var(--muted);margin-top:5px;">Rejection reason: ${l.rejectionReason}</div>`:''}<div style="font-size:.69rem;color:var(--muted);margin-top:5px;">Applied: ${fmtDate(l.appliedOn)}</div></div>`;
+            return`<div class="lv-item">
+                <div class="lv-hdr">
+                    <span class="lv-type">${l.leaveType||'N/A'}</span>
+                    <span class="badge ${bc}">${l.status}</span>
+                </div>
+                <div class="lv-dates">📅 ${fmtDate(l.fromDate)} → ${fmtDate(l.toDate)} • <strong>${l.days||1} day${(l.days||1)>1?'s':''}</strong></div>
+                <div class="lv-rsn">📝 ${l.reason||'N/A'}</div>
+                ${l.status==='Approved'&&l.approvedBy?`<div style="font-size:.69rem;color:var(--muted);margin-top:5px;">✅ Accepted by: ${l.approvedBy}</div>`:''}
+                ${l.status==='Rejected'&&l.rejectedBy?`<div style="font-size:.69rem;color:var(--muted);margin-top:5px;">❌ Rejected by: ${l.rejectedBy}</div>`:''}
+                ${l.status==='Rejected'&&l.rejectionReason?`<div style="font-size:.69rem;color:var(--muted);margin-top:5px;">Reason: ${l.rejectionReason}</div>`:''}
+                <div style="font-size:.69rem;color:var(--muted);margin-top:5px;">Applied: ${fmtDate(l.appliedOn)}</div>
+            </div>`;
         }).join('');
     }
 
@@ -1475,6 +1515,7 @@
         clrAlert('lvAlerts');
     }
     function hideLeave(){document.getElementById('lvSec').style.display='none';resetLvForm();}
+
     async function submitLeave(){
         const type=document.getElementById('lvType').value;
         const from=document.getElementById('lvFrom').value;
@@ -1501,6 +1542,7 @@
             showAlert('lvAlerts',`❌ ${res.message}`,'err');toast('❌ Failed',res.message,'err');
         }
     }
+
     function resetLvForm(){
         ['lvType','lvFrom','lvTo','lvRsn'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
         const i=document.getElementById('leaveDaysInfo');if(i)i.style.display='none';
