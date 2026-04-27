@@ -892,9 +892,9 @@
         });
 
         async function checkConn(){
-            const bar=document.getElementById('connBar');bar.innerHTML=`<div class="conn-bar conn-local"><div class="conn-dot"></div>Checking connection...</div>`;
-            try{const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),5000);const res=await fetch(`${SCRIPT_URL}?action=ping`,{signal:ctrl.signal});const txt=await res.text();JSON.parse(txt.replace(/^[^{[]*/,'').replace(/[^}\]]*$/,''));isLive=true;bar.innerHTML=`<div class="conn-bar conn-live"><div class="conn-dot"></div>✅ Google Sheets Connected</div>`;}
-            catch{isLive=false;bar.innerHTML=`<div class="conn-bar conn-err"><div class="conn-dot"></div>⚠️ Offline — Local mode</div>`;}
+            const bar=document.getElementById('connBar');bar.innerHTML=`<div class="conn-bar conn-local"><div class="conn-dot"></div></div>`;
+            try{const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),5000);const res=await fetch(`${SCRIPT_URL}?action=ping`,{signal:ctrl.signal});const txt=await res.text();JSON.parse(txt.replace(/^[^{[]*/,'').replace(/[^}\]]*$/,''));isLive=true;bar.innerHTML=`<div class="conn-bar conn-live"><div class="conn-dot"></div></div>`;}
+            catch{isLive=false;bar.innerHTML=`<div class="conn-bar conn-err"><div class="conn-dot"></div></div>`;}
         }
 
         function ticker(){const el=document.getElementById('mgrClk');if(el)el.textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}

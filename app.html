@@ -137,32 +137,32 @@
         .hdr-time .t { display:block; font-size:1rem; font-weight:700; color:var(--p); }
 
         /* MAIN */
-        .main { padding:24px 16px 100px; max-width:760px; margin:0 auto; }
+        .main { padding:36px 12px 80px; max-width:740px; margin:0 auto; }
         .pg { display:none; animation:pgIn .4s ease; }
         @keyframes shard-in { 0%{clip-path:polygon(0 0,100% 0,100% 0,0 0);transform:translateY(-30px) rotateX(-5deg);opacity:0} 100%{clip-path:polygon(0 0,100% 0,100% 100%,0 100%);transform:translateY(0) rotateX(0);opacity:1} }
         .pg.on { display:block; }
         @keyframes pgIn { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
 
         /* HERO */
-        .hero { text-align:center; padding:8px 0 28px; }
-        .hero-img-w { width:128px; height:128px; margin:0 auto 16px; position:relative; }
+        .hero { text-align:center; padding:4px 0 18px; }
+        .hero-img-w { width:100px; height:100px; margin:0 auto 12px; position:relative; }
         .hero-img-w--dv { perspective:900px; }
         .dv-hero-glow { position:absolute; inset:-35%; border-radius:50%; background:conic-gradient(from 200deg at 50% 50%,rgba(232,121,249,.45),rgba(34,211,238,.25),rgba(251,191,36,.2),rgba(232,121,249,.45)); filter:blur(28px); animation:dvHeroAura 10s linear infinite; z-index:0; }
         @keyframes dvHeroAura { to{transform:rotate(360deg)} }
         .hero-img { position:relative; z-index:2; width:100%; height:100%; border-radius:28%; object-fit:cover; border:2px solid rgba(255,255,255,.25); box-shadow:0 0 0 1px rgba(232,121,249,.4),0 0 40px rgba(232,121,249,.25),0 24px 56px rgba(0,0,0,.35); animation:hfl 5s ease-in-out infinite; }
         .hero-kicker { font-size:.72rem; font-weight:700; letter-spacing:.4em; text-transform:uppercase; color:var(--ac); margin-bottom:8px; }
-        .hero-title-dv { font-size:clamp(1.95rem,6.5vw,3.1rem); font-weight:900; line-height:1.05; margin-bottom:12px; background:linear-gradient(135deg,#faf5ff 0%,#f0abfc 35%,#22d3ee 65%,#fde68a 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .hero-title-dv { font-size:clamp(1.75rem,5.5vw,2.75rem); font-weight:900; line-height:1.05; margin-bottom:8px; background:linear-gradient(135deg,#faf5ff 0%,#f0abfc 35%,#22d3ee 65%,#fde68a 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
         @keyframes hfl { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
         .ring { position:absolute; z-index:1; border-radius:50%; border:2px solid transparent; animation:spin linear infinite; }
         .ring1 { inset:-10px; border-top-color:var(--p); border-right-color:var(--ac); animation-duration:3s; }
         .ring2 { inset:-22px; border-bottom-color:rgba(232,121,249,.32); border-left-color:rgba(34,211,238,.35); animation-duration:6s; animation-direction:reverse; }
         @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
         [data-theme="light"] .hero-title-dv { background:linear-gradient(135deg,#1e0a2e 0%,#a21caf 40%,#0891b2 72%,#b45309 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-        .hero p { color:var(--muted); font-size:.92rem; max-width:420px; margin:0 auto 8px; line-height:1.6; }
-        .date-badge { display:inline-flex; align-items:center; gap:8px; background:var(--glass); border:1px solid var(--gb); padding:8px 18px; border-radius:50px; font-size:.82rem; margin-top:14px; backdrop-filter:blur(10px); color:var(--txt); }
+        .hero p { color:var(--muted); font-size:.86rem; max-width:420px; margin:0 auto 6px; line-height:1.5; }
+        .date-badge { display:inline-flex; align-items:center; gap:8px; background:var(--glass); border:1px solid var(--gb); padding:6px 14px; border-radius:50px; font-size:.76rem; margin-top:8px; backdrop-filter:blur(10px); color:var(--txt); }
 
         /* CARDS */
-        .card { background:var(--card); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); border:1px solid var(--gb); border-radius:var(--r); padding:22px; box-shadow:var(--sh); position:relative; overflow:visible; transition:var(--tr-3d); transform-style:preserve-3d; animation:shard-in 0.6s cubic-bezier(0.68,-0.55,0.27,1.55) forwards; }
+        .card { background:var(--card); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); border:1px solid var(--gb); border-radius:var(--r); padding:18px; box-shadow:var(--sh); position:relative; overflow:visible; transition:var(--tr-3d); transform-style:preserve-3d; animation:shard-in 0.6s cubic-bezier(0.68,-0.55,0.27,1.55) forwards; }
         .card:hover { transform:translateY(-5px) scale(1.02) rotateX(2deg) rotateY(-2deg); box-shadow:0 15px 35px rgba(0,0,0,0.2),0 5px 15px rgba(0,0,0,0.1); z-index:10; }
         .card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,transparent,var(--p),var(--ac),transparent); }
 
@@ -170,15 +170,18 @@
         .conn-status { display:flex; align-items:center; gap:8px; font-size:.75rem; padding:7px 13px; border-radius:50px; margin-bottom:16px; width:fit-content; }
         .conn-live { background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.3); color:#059669; }
         .conn-local { background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); color:#d97706; }
+        .conn-err { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#dc2626; }
         [data-theme="dark"] .conn-live { color:#34d399; }
         [data-theme="dark"] .conn-local { color:#fbbf24; }
+        [data-theme="dark"] .conn-err { color:#f87171; }
         .conn-dot { width:7px; height:7px; border-radius:50%; animation:blink 1.4s infinite; }
         .conn-live .conn-dot { background:#10b981; }
         .conn-local .conn-dot { background:#f59e0b; }
+        .conn-err .conn-dot { background:#ef4444; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
         /* FORMS */
-        .fgrp { margin-bottom:18px; }
+        .fgrp { margin-bottom:14px; }
         .flbl { display:block; margin-bottom:8px; font-size:.78rem; font-weight:700; color:var(--p); text-transform:uppercase; letter-spacing:1.2px; }
         .iw { position:relative; }
         .finp { width:100%; padding:14px 16px 14px 46px; background:var(--inp-bg); border:2px solid var(--inp-border); border-radius:var(--rs); color:var(--txt); font-size:16px; outline:none; transition:var(--tr); }
@@ -603,29 +606,6 @@
                 <button class="btn btn-p btn-fw" id="fetchBtn" onclick="fetchEmployee()">
                     🔍 Fetch My Details
                 </button>
-            </div>
-        </div>
-
-        <!-- LOADING PAGE -->
-        <div class="pg" id="pgLoading" style="display:none;justify-content:center;align-items:center;min-height:60vh;">
-            <div class="loading-wrap">
-                <div class="ap-loader ap-loader--sm" aria-hidden="true">
-                    <div class="ap-loader__spin">
-                        <div class="ap-loader__ring"></div>
-                        <div class="ap-loader__ring"></div>
-                        <div class="ap-loader__ring"></div>
-                        <div class="dv-gem-wrap">
-                            <div class="dv-gem-bloom" aria-hidden="true"></div>
-                            <img src="1.jpg" alt="" class="dv-gem-img" width="80" height="80" decoding="async"/>
-                        </div>
-                    </div>
-                </div>
-                <div id="loadingTitle" style="font-size:1.25rem;font-weight:700;color:var(--txt);margin-top:22px;">Please wait...</div>
-                <div id="loadingMsg" style="font-size:.87rem;color:var(--muted);margin-top:8px;line-height:1.6;">Your details are loading</div>
-                <div id="loadingSteps" style="margin-top:20px;display:flex;flex-direction:column;gap:8px;align-items:center;"></div>
-                <div class="loading-bar-wrap" style="margin-top:20px;">
-                    <div class="loading-bar" id="loadingBar"></div>
-                </div>
             </div>
         </div>
 
@@ -1081,16 +1061,16 @@
 
     async function checkConnFast(){
         const el=document.getElementById('connStatus');
-        el.innerHTML=`<div class="conn-status conn-local"><div class="conn-dot"></div>Checking connection...</div>`;
+        el.innerHTML=`<div class="conn-status conn-local"><div class="conn-dot"></div></div>`;
         try{
             const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),4000);
             const res=await fetch(`${SCRIPT_URL}?action=ping`,{signal:ctrl.signal});
             const txt=await res.text();JSON.parse(txt.replace(/^[^{[]*/,'').replace(/[^}\]]*$/,''));
             isConnected=true;
-            el.innerHTML=`<div class="conn-status conn-live"><div class="conn-dot"></div>✅ Google Sheets Connected</div>`;
+            el.innerHTML=`<div class="conn-status conn-live"><div class="conn-dot"></div></div>`;
         }catch{
             isConnected=false;
-            el.innerHTML=`<div class="conn-status conn-local"><div class="conn-dot"></div>⚠️ Offline — Local mode active</div>`;
+            el.innerHTML=`<div class="conn-status conn-err"><div class="conn-dot"></div></div>`;
         }
     }
 

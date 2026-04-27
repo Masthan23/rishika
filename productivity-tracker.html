@@ -639,10 +639,13 @@
 
   function setConn(ok, isLogin){
     const bar=document.getElementById(isLogin?'connBar':'connBarApp');
-    const txt=document.getElementById(isLogin?'connTxt':'connTxtApp');
-    if(!bar||!txt) return;
+    if(!bar) return;
     bar.className='conn-bar '+(ok?'conn-live':'conn-err');
-    txt.textContent=ok?'✅ Google Sheets Connected':'⚠️ Offline / cannot reach script';
+    if(!bar.querySelector('.conn-dot')) {
+      const dot=document.createElement('div');
+      dot.className='conn-dot';
+      bar.appendChild(dot);
+    }
   }
 
   async function callAPI(action,data={}){
